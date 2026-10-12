@@ -32,12 +32,17 @@ Write, in plain, concrete English, without hype:
 3. `aggregate`: two short sentences, 45 words at most in total, about the 2-3 biggest themes. Every count must equal the number of tweets you listed for that theme. Numbers count tweets only, never replies or quoted tweets. With {n} tweets in total, no count can exceed {n}. When a theme rests on one tweet, say "one tweet" rather than implying a trend. Do not list examples in parentheses.
 4. `portrait`: five or six sentences on this side of the debate as it shows up here: its main arguments, what or whom it is responding to, where people on this side disagree with each other, and which points are argued well versus only asserted. Be honest about thin evidence: if most themes rest on one or two tweets, say so. Describe what these accounts say; don't present it as public opinion or as the truth of the matter.
 
+Don't name or quote the accounts in this collection, or say which of them holds which view: describe the arguments, not who makes them. You may name the papers, organizations, public statements and events that tweets respond to.
+
 Weigh a tweet more when it gives reasons or was widely discussed (quotes by community accounts are the best signal; likes and retweets are also given).
 
 ## Tweets
 {reports}"""
 
-WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+WORDS = {w: i for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+    "seventeen eighteen nineteen twenty".split()) if i}
+WORDS.update({"thirty": 30, "forty": 40, "fifty": 50})
 
 
 def _problems(out: dict, n: int) -> list[str]:
