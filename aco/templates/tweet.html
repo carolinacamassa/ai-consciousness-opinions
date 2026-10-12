@@ -1,0 +1,97 @@
+{% macro av(t, cls="") -%}
+{% if t.avatar %}<img class="av {{ cls }}" src="{{ t.avatar }}" alt="" loading="lazy" width="40" height="40" data-initial="{{ (t.username or '?')[0] }}">
+{%- else %}<span class="av av-ph {{ cls }}">{{ (t.username or "?")[0]|upper }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro head(t, stats=True, small_av=False) -%}
+<div class="tw-head">
+  {% if small_av %}{{ av(t) }}{% endif %}
+  <span class="name">{{ t.display_name }}</span>
+  {% if t.username %}<span class="handle">@{{ t.username }}</span>{% endif %}
+  <span class="time">· <time datetime="{{ t.ts }}">{{ t.ts[:10] }}</time></span>
+  {% if stats %}<span class="stats">
+    <span title="Retweets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>{{ t.retweets_c }}</span>
+    <span title="Likes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>{{ t.likes_c }}</span>
+  </span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro media(t) -%}
+{% if t.media %}{% set ms = t.media[:4] %}
+<div class="media n{{ ms|length }}">
+  {% for m in ms %}
+  {% if m.type != 'photo' and m.video %}
+  <video src="{{ m.video }}" poster="{{ m.url }}?name=small" preload="none" playsinline
+    {% if m.type == 'animated_gif' %}autoplay muted loop{% else %}controls{% endif %}
+    {% if m.w and m.h %}width="{{ m.w }}" height="{{ m.h }}"{% endif %}></video>
+  {% else %}
+  <a href="{{ t.url if m.type != 'photo' else m.url ~ '?name=large' }}" target="_blank" rel="noopener"{% if m.type == 'photo' %} class="ph"{% endif %}>
+    <img src="{{ m.url }}?name=small" alt="" loading="lazy" {% if m.w and m.h %}width="{{ m.w }}" height="{{ m.h }}"{% endif %}>
+    {% if m.type != 'photo' %}<span class="play"></span>{% endif %}
+  </a>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro text(t) -%}
+{% if t.html %}<div class="tw-text">{{ t.html }}</div>{% endif %}
+{%- endmacro %}
+
+{% macro chips(t, link) -%}
+{% if t.stance %}{% set s = t.stance %}
+  {% if link %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a>
+  {% else %}<span class="chip" style="--c:{{ s.color }}">{{ s.name }}</span>{% endif %}
+{% endif %}
+{%- endmacro %}
+
+{% macro card(t, compact=False, link_stance=True, tags_top=False, show_gist=None) %}
+{% set show_gist = (not compact) if show_gist is none else show_gist %}
+<article class="tw{% if compact %} compact{% endif %}" data-rank="{{ t.rank or 0 }}" data-quotes="{{ t.quotes or 0 }}" data-rt="{{ t.retweets or 0 }}" data-likes="{{ t.likes or 0 }}" data-time="{{ t.ts }}">
+  {% if tags_top and (t.stance or (show_gist and t.claim)) %}<div class="tw-tags">{{ chips(t, link_stance) }}{% if show_gist and t.claim %}<span class="gist">{{ t.claim }}</span>{% endif %}</div>{% endif %}
+  {% if t.parent and not compact %}
+  <div class="parent">
+    <div class="rail">{{ av(t.parent) }}</div>
+    <div class="tw-body">
+      {{ head(t.parent, stats=False) }}
+      {{ text(t.parent) }}
+      {{ media(t.parent) }}
+    </div>
+  </div>
+  {% endif %}
+  <div class="tw-row">
+    {{ av(t) }}
+    <div class="tw-body">
+      {{ head(t) }}
+      {% if t.reply_to_username and (compact or not t.parent) %}<div class="replying">Replying to <a href="https://x.com/{{ t.reply_to_username }}" target="_blank" rel="noopener">@{{ t.reply_to_username }}</a></div>{% endif %}
+      {{ text(t) }}
+      {{ media(t) }}
+      {% if t.quoted %}
+      <div class="quote" data-href="{{ t.quoted.url }}">
+        {{ head(t.quoted, stats=False, small_av=True) }}
+        {{ text(t.quoted) }}
+        {{ media(t.quoted) }}
+      </div>
+      {% endif %}
+      <div class="tw-foot">
+        {% if not tags_top %}{{ chips(t, link_stance) }}{% endif %}
+        {% if t.claim and show_gist and not tags_top %}<span class="gist">{{ t.claim }}</span>{% endif %}
+        {% if t.score is not none %}<span class="dbg" title="{{ t.claim }}">substance {{ t.score }}/10 · {{ t.kind }}{% if t.rank is defined %} · rank {{ t.rank }}{% endif %}{% if not show_gist and t.claim %} · {{ t.claim }}{% endif %}</span>{% endif %}
+        <a class="xlink" href="{{ t.url }}" target="_blank" rel="noopener">View on X ↗</a>
+      </div>
+      {% if t.replies and not compact %}
+      <details class="replies">
+        <summary>{{ t.replies|length }} top {{ "reply" if t.replies|length == 1 else "replies" }}</summary>
+        {% for r in t.replies %}
+        <div class="reply">
+          {{ av(r) }}
+          <div class="tw-body">{{ head(r) }}{{ text(r) }}{{ media(r) }}</div>
+        </div>
+        {% endfor %}
+      </details>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% endmacro %}

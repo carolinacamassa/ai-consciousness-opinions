@@ -1,0 +1,61 @@
+# AI Consciousness Opinions
+
+What people on X say about whether AI systems are conscious, and about whether they are owed moral consideration
+(including arguments for or against that don't depend on consciousness), sorted into three stances: **affirming**,
+**skeptical** and **uncertain**. The tweets come from the [Community Archive](https://www.community-archive.org), an
+open, opt-in archive of X, so the site describes what the accounts in that archive say, not public opinion.
+
+The code is adapted from [Model Behavior Reports](https://github.com/aVariengien/model-behavior-reports) by
+Alexandre Variengien, which does the same thing for reports of how LLMs behave. The fetching, context, ranking,
+summaries and static build are his; the searches, the grading prompt, the stance-based pages and the per-author
+cap on summaries are new.
+
+## How it works
+
+`aco update` does, in order:
+
+1. **Searches** the archive's full-text index for tweets inserted or updated since the last run, using the terms in
+   `aco/config.py` (`SEARCHES`): conscious, sentient, qualia, model welfare, moral patient, AI rights and a few more.
+2. **Hydrates** each match with its parent tweet, quoted tweet, top 10 replies and media, and looks up playable
+   video URLs and missing avatars from X's public embed endpoint (`aco/xmedia.py`).
+3. **Grades** each match with Gemini 3.8 Flash (text and attached images, `aco/classify.py`): is it a human opinion
+   on AI consciousness or moral status, which stance it takes, what kind of tweet it is (argument, opinion,
+   question, news, model output, joke, off topic), how much substance it has (1-10), and the author's point in a
+   few words. Tweets that only relay what a model said about itself are left out. About $0.0012 per tweet.
+4. **Counts quotes**: distinct archive accounts that quote-tweeted each opinion.
+5. **Summarizes** each stance with Claude Opus 5.5, at most daily and only when new opinions arrived, from the
+   stance's strongest opinions with at most four per account (`aco/summarize.py`).
+6. **Builds** a static site in `dist/` plus plain-text exports for LLMs (`/llms.txt`, `/llms-full.txt`,
+   `/data/<stance>.md`).
+
+Opinions are shown when the grader gives them a substance of 4 or more, and ranked by
+`50 × quotes + 20 × log2(1 + min(retweets, 100)) + 15 × substance`. Add `?debug=1` to any page to see each
+tweet's grade.
+
+## Running it
+
+Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). All LLM calls go through
+[OpenRouter](https://openrouter.ai).
+
+```bash
+uv sync
+export OPENROUTER_API_KEY=...
+uv run aco backfill --days 60    # run the searches over the last 60 days (free, a few minutes)
+uv run aco classify              # hydrate and grade the matches
+uv run aco quotes && uv run aco videos
+uv run aco summarize
+uv run aco build                 # static site in dist/
+uv run aco update                # the scheduled job: all of the above, incrementally
+uv run aco stats
+```
+
+To serve the site under a path rather than a domain root (a GitHub Pages project site, for example), set
+`ACO_BASE=/ai-consciousness-opinions/` before `build`. `ACO_SITE_URL` sets the absolute URL used in `llms.txt`.
+
+Data lives in `data/aco.sqlite`, which is not committed. The stance names and definitions, the searches, the score
+threshold and the ranking weights are at the top of `aco/config.py`.
+
+## Data and credits
+
+Tweets come from the [Community Archive](https://www.community-archive.org) through its public API. Built on
+[Model Behavior Reports](https://github.com/aVariengien/model-behavior-reports) by Alexandre Variengien. MIT licensed.
