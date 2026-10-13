@@ -18,12 +18,12 @@
     <p class="one"><mark>{{ stance.one_head }}</mark> {{ stance.one_rest }}</p>
     <p class="agg"><b>findings → </b>{{ stance.summary.aggregate }}</p>
     <p class="portrait">{{ stance.summary.portrait }}</p>
-    <div class="when">summary written by {{ summarizer }} on {{ stance.summary.updated_at[:10] }} from the opinions below, at most four per account</div>
+    <div class="when">written by {{ summarizer }}</div>
   </div>
   {% endif %}
 </header>
-<main>
-<section data-sortable style="margin-top: 32px">
+<main class="stance-body">
+<section data-sortable>
   <div class="toolbar">
     <h2>Opinions</h2>
     <div class="sec-tools" role="group" aria-label="Sort opinions">
@@ -34,5 +34,30 @@
   <div class="list">{% for t in items %}{{ card(t, link_stance=False) }}{% endfor %}</div>
   <div class="more-row"><button type="button" class="more hidden">+ show more</button></div>
 </section>
+<aside aria-labelledby="h-args">
+  <div class="argstats">
+    <h3 id="h-args">Most common arguments</h3>
+    {% for a in stance.top_args %}
+    <div class="argrow{{ ' hidden' if loop.index > 12 }}">
+      <a href="{{ base }}argument/{{ a.slug }}/" title="{{ a.definition }}">{{ a.label }}</a>
+      <span class="n">{{ a.count }}</span>
+      <span class="bar" aria-hidden="true"><span style="width: {{ a.bar }}%"></span></span>
+    </div>
+    {% endfor %}
+    {% if stance.top_args|length > 12 %}<div class="more-row" style="margin-top: 10px"><button type="button" id="args-more">+ all {{ stance.top_args|length }} arguments</button></div>{% endif %}
+  </div>
+</aside>
 </main>
+{% endblock %}
+
+{% block script %}
+<script>
+(function () {
+  var b = document.getElementById("args-more");
+  if (b) b.addEventListener("click", function () {
+    document.querySelectorAll(".argstats .argrow.hidden").forEach(function (r) { r.classList.remove("hidden"); });
+    b.remove();
+  });
+})();
+</script>
 {% endblock %}

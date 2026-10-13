@@ -3,55 +3,62 @@
 
 {% block body %}
 <header class="masthead">
-  <nav class="topnav" aria-label="Site"><a href="{{ base }}about/">about</a><a href="{{ github }}" target="_blank" rel="noopener">github</a><a href="{{ base }}llms.txt">llms.txt</a></nav>
-  <div class="head-row">
-    <div class="head-main">
-      <div class="kicker">Observation log · collected from X</div>
-      <h1 class="brand">{{ site_name }}</h1>
-      <p class="dek">What people on X say about whether AI systems are conscious or owed moral consideration, sorted by stance. Built from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, so it reflects the accounts there, not public opinion.</p>
-    </div>
-    <aside class="panel" aria-label="Signs of life">
-      <dl>
-        <dt>opinions</dt><dd>{{ '{:,}'.format(n_reports) }}</dd>
-        <dt>accounts</dt><dd>{{ '{:,}'.format(n_people) }}</dd>
-        <dt>since</dt><dd>{{ start_date }}</dd>
-        <dt>last entry</dt><dd>{{ last_entry }}</dd>
-      </dl>
-      {% if viz.weeks %}
+  <nav class="topnav" aria-label="Site"><a href="{{ base }}arguments/">arguments</a><a href="{{ base }}about/">about</a><a href="{{ github }}" target="_blank" rel="noopener">github</a><a href="{{ base }}llms.txt">llms.txt</a></nav>
+  <div class="head-main">
+    <div class="kicker">Observation log · collected from X</div>
+    <h1 class="brand">{{ site_name }}</h1>
+    <p class="dek">What people on X say about whether AI systems are conscious or owed moral consideration, sorted by stance. Built from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, so it reflects the accounts there, not public opinion.</p>
+  </div>
+</header>
+
+<aside class="panel" aria-label="Signs of life">
+  <div class="panel-grid">
+    <dl class="panel-cell">
+      <dt>opinions</dt><dd>{{ '{:,}'.format(n_reports) }}</dd>
+      <dt>accounts</dt><dd>{{ '{:,}'.format(n_people) }}</dd>
+      <dt>since</dt><dd>{{ start_date }}</dd>
+      <dt>last entry</dt><dd>{{ last_entry }}</dd>
+    </dl>
+    {% if viz.weeks %}
+    <div class="panel-cell">
       <h3>Tweets about the topic, per week</h3>
       {{ viz.line }}
-      {% endif %}
-      {% if viz.months %}
+    </div>
+    {% endif %}
+    {% if viz.months %}
+    <div class="panel-cell">
       <h3>Share of opinions by stance, per month</h3>
       <div class="legend">{% for s in stances %}<span><i style="--c:{{ s.color }}"></i>{{ s.name }}</span>{% endfor %}</div>
       {{ viz.stack }}
-      {% endif %}
-      <p class="note">Original tweets and quote tweets in the archive, which grows as people upload, so this shows activity there, not on X as a whole.{% if viz.months and viz.months[-1].partial %} * {{ viz.months[-1].long }}.{% endif %}</p>
-      <details class="viz-table">
-        <summary>show as a table</summary>
-        <table>
-          <caption class="sr-only">Share of shown opinions by stance, per month</caption>
-          <tr><th scope="col">month</th>{% for s in stances %}<th scope="col">{{ s.name|lower }}</th>{% endfor %}<th scope="col">n</th></tr>
-          {% for m in viz.months %}<tr><td>{{ m.long }}</td>{% for s in stances %}<td>{{ m.shares[s.slug]|round|int }}%</td>{% endfor %}<td>{{ m.total }}</td></tr>{% endfor %}
-        </table>
+    </div>
+    {% endif %}
+  </div>
+  <div class="panel-foot">
+    <details class="viz-table">
+      <summary>show as a table</summary>
+      <div class="tables">
         <table>
           <caption class="sr-only">Tweets about the topic per week</caption>
           <tr><th scope="col">week of</th><th scope="col">tweets</th></tr>
           {% for w in viz.weeks %}<tr><td>{{ w.label }}</td><td>{{ w.n }}</td></tr>{% endfor %}
         </table>
-      </details>
-      <a class="raw" href="{{ base }}llms.txt">raw data for LLMs ↗</a>
-      <div class="viz-tip" role="status" hidden></div>
-    </aside>
+        <table>
+          <caption class="sr-only">Share of shown opinions by stance, per month</caption>
+          <tr><th scope="col">month</th>{% for s in stances %}<th scope="col">{{ s.name|lower }}</th>{% endfor %}<th scope="col">n</th></tr>
+          {% for m in viz.months %}<tr><td>{{ m.long }}</td>{% for s in stances %}<td>{{ m.shares[s.slug]|round|int }}%</td>{% endfor %}<td>{{ m.total }}</td></tr>{% endfor %}
+        </table>
+      </div>
+    </details>
+    <a href="{{ base }}llms.txt">raw data for LLMs ↗</a>
   </div>
-</header>
+  <div class="viz-tip" role="status" hidden></div>
+</aside>
 
 <main>
-<section aria-labelledby="h-stances" style="margin-top: 8px">
+<section aria-labelledby="h-stances" style="margin-top: 40px">
   <div class="sec-head">
     <span class="sec-n">§1</span>
     <h2 id="h-stances">Opinions by stance</h2>
-    <span class="sec-meta">one column per stance</span>
     <div class="sec-tools" role="group" aria-label="Order the columns">
       <button type="button" data-order="top" aria-pressed="true">top</button>
       <button type="button" data-order="new" aria-pressed="false">newest</button>
@@ -63,14 +70,15 @@
   <div class="cols">
     {% for s in stances %}
     <article class="col{{ '' if loop.first else ' tab-off' }}" data-col="{{ s.slug }}" style="--c:{{ s.color }}">
-      <div class="col-strip"><span>Stance {{ s.letter }}</span><span class="when" data-top="top · {{ s.window }}" data-new="newest">top · {{ s.window }}</span></div>
-      <div class="col-head">
-        <h3><span class="swatch" aria-hidden="true"></span><a href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a></h3>
+      <a class="col-head" href="{{ base }}stance/{{ s.slug }}/">
+        <h3><span class="swatch" aria-hidden="true"></span>{{ s.name }}<span class="go" aria-hidden="true">→</span></h3>
         <p class="col-def">{{ s.blurb }}</p>
-      </div>
+        <span class="col-link">all opinions and arguments</span>
+      </a>
+      <div class="col-strip"><span class="when" data-top="top · {{ s.window }}" data-new="newest">top · {{ s.window }}</span></div>
       <div class="entries" data-list="top">{% for t in s.top_items %}{{ entry(t) }}{% else %}<p class="entry muted">No opinions yet.</p>{% endfor %}</div>
       <div class="entries hidden" data-list="new">{% for t in s.new_items %}{{ entry(t) }}{% endfor %}</div>
-      <div class="col-foot"><a href="{{ base }}stance/{{ s.slug }}/">all {{ s.name|lower }} opinions →</a></div>
+      <div class="col-foot"><a href="{{ base }}stance/{{ s.slug }}/">all {{ s.name|lower }} opinions and arguments →</a></div>
     </article>
     {% endfor %}
   </div>
@@ -80,7 +88,6 @@
   <div class="sec-head">
     <span class="sec-n">§2</span>
     <h2 id="h-notable">Most notable opinions</h2>
-    <span class="sec-meta">all time, ranked by quotes, retweets and substance, taking each stance in turn</span>
   </div>
   <div class="notable" id="notable">
     {% for t in notable %}<div class="{{ 'hidden' if loop.index > 6 }}">{{ card(t, label="obs. " ~ t.obs) }}</div>{% endfor %}
@@ -92,7 +99,6 @@
   <div class="sec-head">
     <span class="sec-n">§3</span>
     <h2 id="h-people">Most active voices</h2>
-    <span class="sec-meta">accounts with the most opinions shown here</span>
   </div>
   <div class="ruled"><div class="inner">
     <div class="row th" aria-hidden="true"><span>#</span><span>account</span><span>opinions</span><span></span></div>

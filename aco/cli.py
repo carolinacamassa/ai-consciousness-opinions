@@ -54,7 +54,13 @@ def main():
             arguments.tag(con, config.TAG_PER_RUN)
             collect.refresh_quotes(con)
             summarize.summarize(con)
-            build.build(con)
+            # Log the run before building, so the status page it builds includes this run.
+            rowid, logged = runlog.save(con, "update", started, "ok"), False
+            try:
+                build.build(con)
+            except BaseException as e:
+                runlog.fail(con, rowid, f"build: {e!r}")
+                raise
         elif args.cmd == "classify":
             from . import classify
             collect.hydrate(con)

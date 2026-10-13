@@ -29,6 +29,7 @@
   <ol>
     <li>The archive is searched for {% for label in searches %}“{{ label }}”{{ ", " if not loop.last }}{% endfor %} and related phrases.</li>
     <li>Each match is read together with the tweet it quotes, the rest of its thread and its attached images. {{ classifier }} decides whether it is a human opinion on the topic, which stance it takes, and how much substance it has, from 1 to 10. Opinions scoring {{ min_score }} or more appear on the site. Stances are assigned per opinion, not per person, and the grader can be wrong.</li>
+    <li>Each opinion on the site is tagged with up to three of the <a href="{{ base }}arguments/">arguments</a> it makes, from a fixed list (version {{ args_version }}), by {{ tagger }}. The list came from two passes of {{ summarizer }} over all the opinions' claims; when it changes, every opinion is tagged again.</li>
     <li>Opinions are ranked by <code>{{ rank_quote }} × quotes + {{ rank_rt }} × log2(1 + min(retweets, {{ rank_cap }})) + {{ rank_score }} × substance</code>, where <em>quotes</em> counts distinct Community Archive accounts that quote-tweeted the opinion.</li>
     <li>{{ summarizer }} reads each stance's strongest opinions, at most four per account, and writes the summary on its page.</li>
   </ol>

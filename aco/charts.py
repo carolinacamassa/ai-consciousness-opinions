@@ -64,7 +64,7 @@ def monthly_shares(con, today: date) -> list[dict]:
         total = sum(counts.values())
         partial = (y, mo) == (today.year, today.month)
         out.append({"month": m, "label": MONTHS[mo - 1], "partial": partial,
-                    "long": f"{MONTHS[mo - 1]} 1–{today.day}" if partial else f"{MONTHS[mo - 1]} {y}",
+                    "long": f"{MONTHS[mo - 1]} {y}",
                     "total": total, "counts": counts,
                     "shares": {k: (100 * v / total if total else 0) for k, v in counts.items()}})
     return out
@@ -152,7 +152,7 @@ def stack_svg(months: list[dict]) -> Markup:
                 last_mids[slug] = (top + y0) / 2
             y0 = top
         parts.append(f'<text x="{x + bw / 2:.1f}" y="{H - 4}" text-anchor="middle" class="tick">'
-                     f'{escape(m["label"])}{"*" if m["partial"] else ""}</text>')
+                     f'{escape(m["label"])}</text>')
     # Direct labels for the latest month, only where they don't collide (else legend and table carry it).
     mids = sorted(last_mids.items(), key=lambda kv: kv[1])
     if all(b[1] - a[1] >= 12 for a, b in zip(mids, mids[1:])):

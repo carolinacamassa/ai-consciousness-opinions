@@ -6,14 +6,13 @@
 
 {% block body %}
 <nav class="crumbs"><a class="home" href="{{ base }}#people">← {{ site_name }}</a></nav>
-<header class="page-head">
-  <div class="kicker">Account · {{ person.n }} {{ "opinion" if person.n == 1 else "opinions" }} in the log</div>
-  <h1>{{ person.name or person.username }}</h1>
-  <p class="def"><a href="https://x.com/{{ person.username }}" target="_blank" rel="noopener">@{{ person.username }} ↗</a></p>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px">
-    {% for s in chips %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }} {{ s.count }}</a>{% endfor %}
+<header class="page-head person-head">
+  {% if person.avatar %}<img class="av av-lg" src="{{ person.avatar }}" alt="" width="72" height="72" data-initial="{{ person.username[0] }}">{% else %}<span class="av av-ph av-lg" aria-hidden="true">{{ person.username[0]|upper }}</span>{% endif %}
+  <div>
+    <div class="kicker">Account · {{ person.n }} {{ "tweet" if person.n == 1 else "tweets" }}</div>
+    <h1>{{ person.name or person.username }}</h1>
+    <p class="def"><a href="https://x.com/{{ person.username }}" target="_blank" rel="noopener">@{{ person.username }} ↗</a></p>
   </div>
-  <p class="def" style="font-size: 12.5px; color: var(--muted)">Stances are assigned to each tweet by {{ classifier }}, not to the person, and can be wrong.</p>
 </header>
 <main>
 <section data-sortable style="margin-top: 32px">
