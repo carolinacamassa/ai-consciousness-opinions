@@ -110,6 +110,8 @@ class Store:
         t["rank"] = round(config.rank(t["quotes"], t["retweets"], t["score"]))
         t["replies"] = [x for x in (self.tweet(rid, 1) for rid in json.loads(r["reply_ids"] or "[]")) if x]
         t["thread"] = [x for x in (self.tweet(tid, 1) for tid in json.loads(r["thread_ids"] or "[]")) if x]
+        from .arguments import BY_ID
+        t["arguments"] = [BY_ID[a] for a in json.loads(r["arguments"] or "[]") if a in BY_ID]
         return t
 
 

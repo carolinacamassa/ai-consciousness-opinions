@@ -23,6 +23,8 @@ def main():
     sub.add_parser("videos", help="look up playable video URLs and missing avatars")
     sub.add_parser("stats")
     sub.add_parser("prune", help="delete stored tweets the site doesn't show or use as context")
+    tg = sub.add_parser("tag", help="tag shown opinions with arguments from aco/arguments.json")
+    tg.add_argument("--limit", type=int)
     args = p.parse_args()
 
     # One run at a time: a scheduled run must not overlap a long backfill.
@@ -40,7 +42,7 @@ def main():
         if args.cmd == "backfill":
             collect.backfill(con, args.since)
         elif args.cmd == "update":
-            from . import build, classify, summarize, xmedia
+            from . import arguments, build, classify, summarize, xmedia
             if collect.needs_backfill(con):  # START_DATE moved earlier, or a fresh database
                 collect.backfill(con)
             collect.incremental(con)
@@ -49,6 +51,7 @@ def main():
             xmedia.fill_authors(con)
             xmedia.fill_avatars(con)
             classify.classify(con, config.CLASSIFY_PER_RUN)
+            arguments.tag(con, config.TAG_PER_RUN)
             collect.refresh_quotes(con)
             summarize.summarize(con)
             build.build(con)
@@ -69,6 +72,9 @@ def main():
         elif args.cmd == "build":
             from . import build
             build.build(con)
+        elif args.cmd == "tag":
+            from . import arguments
+            arguments.tag(con, args.limit)
         elif args.cmd == "prune":
             print(f"prune: deleted {db.prune(con, config.MIN_SCORE)} tweets the site doesn't use")
         elif args.cmd == "stats":

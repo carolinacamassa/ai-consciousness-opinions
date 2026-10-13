@@ -163,6 +163,20 @@ def incremental(con):
     print(f"incremental: {new} new candidates since {since}")
 
 
+def exclude_accounts(con) -> int:
+    """Set aside candidates from config.EXCLUDED_ACCOUNTS (their grades, if any, stay)."""
+    if not config.EXCLUDED_ACCOUNTS:
+        return 0
+    n = con.execute(
+        f"UPDATE reports SET unit='excluded' WHERE unit IN {db.UNITS} AND tweet_id IN "
+        f"(SELECT tweet_id FROM tweets WHERE lower(username) IN ({','.join('?' * len(config.EXCLUDED_ACCOUNTS))}))",
+        config.EXCLUDED_ACCOUNTS).rowcount
+    con.commit()
+    if n:
+        print(f"  excluded {n} candidates from {', '.join(config.EXCLUDED_ACCOUNTS)}")
+    return n
+
+
 def hydrate(con, batch: int = 200):
     """Fetch each pending candidate with its quoted tweet, the author's thread under it and top
     replies. Candidates that turn out to be replies (saved by older versions) are dropped, or
@@ -171,6 +185,7 @@ def hydrate(con, batch: int = 200):
         rows = {r["tweet_id"]: r for r in con.execute(
             "SELECT tweet_id, searches, thread_ids FROM reports WHERE hydrated=0 LIMIT ?", (batch,))}
         if not rows:
+            exclude_accounts(con)
             return
         main = archive.fetch_tweets(rows)
 

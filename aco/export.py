@@ -46,6 +46,7 @@ def report_md(i: int, t) -> str:
            f"- URL: {t['url']}\n",
            f"- Author: @{t['username']} ({t['display_name']}), {t['created_at'][:10]}\n",
            f"- Stance: {t['stance']['name']}\n",
+           f"- Arguments: {', '.join(a['label'] for a in t.get('arguments') or []) or '(none tagged)'}\n",
            f"- Substance: {t['score']}/10 ({t['kind']}) · quotes by archive accounts: {t['quotes']} · "
            f"retweets: {t['retweets']} · likes: {t['likes']} · rank: {t['rank']}\n\n"]
     if t.get("parent"):
