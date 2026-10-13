@@ -26,10 +26,14 @@ cap on summaries are new.
    on AI consciousness or moral status, which stance it takes, what kind of tweet it is (argument, opinion,
    question, news, model output, joke, off topic), how much substance it has (1-10), and the author's point in a
    few words. Tweets that only relay what a model said about itself are left out. About $0.0012 per tweet.
-4. **Counts quotes**: distinct archive accounts that quote-tweeted each opinion.
-5. **Summarizes** each stance with Claude Opus 5.5, at most weekly and only when new opinions arrived, from the
+4. **Tags arguments**: each shown opinion gets up to three arguments from the fixed, versioned list in
+   `aco/arguments.json` (48 arguments in 8 families), with Gemini 3.8 Flash (`aco/arguments.py`, about $0.004 per
+   opinion). Bumping the list's `version` re-tags everything. Flash was picked against Claude Opus 5.5 as a reference
+   on 100 opinions: F1 0.79, the best of the setups tried.
+5. **Counts quotes**: distinct archive accounts that quote-tweeted each opinion.
+6. **Summarizes** each stance with Claude Opus 5.5, at most weekly and only when new opinions arrived, from the
    stance's strongest opinions with at most four per account (`aco/summarize.py`). Each summary costs about $0.45.
-6. **Builds** a static site in `dist/` plus plain-text exports for LLMs (`/llms.txt`, `/llms-full.txt`,
+7. **Builds** a static site in `dist/` plus plain-text exports for LLMs (`/llms.txt`, `/llms-full.txt`,
    `/data/<stance>.md`).
 
 Opinions are shown when the grader gives them a substance of 4 or more, and ranked by

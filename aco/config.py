@@ -32,6 +32,7 @@ CLASSIFY_MODEL_NAME = "Gemini 3.8 Flash"
 CLASSIFY_REASONING = "low"
 SUMMARY_MODEL_NAME = "Claude Opus 5.5"
 TAG_MODEL = "google/gemini-3.8-flash"  # argument tags; see aco/arguments.py
+TAG_MODEL_NAME = "Gemini 3.8 Flash"
 TAG_REASONING = "low"
 TAG_PER_RUN = 400          # cap per scheduled run; a new version of arguments.json is re-tagged gradually
 

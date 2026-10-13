@@ -10,7 +10,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
-from . import charts, config, db, export, status
+from . import arguments, charts, config, db, export, status
 
 TEMPLATES = Path(__file__).parent / "templates"
 NOTABLE_N = 48
@@ -59,6 +59,15 @@ def render_text(text: str, urls: list, drop_trailing: bool) -> Markup:
     return Markup("").join(out)
 
 
+def short_date(ts: str | None) -> str:
+    """'Oct 6', as on X, with the year when it isn't the current one."""
+    if not ts:
+        return ""
+    d = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    label = f"{d:%b} {d.day}"
+    return label if d.year == datetime.now(timezone.utc).year else f"{label}, {d.year}"
+
+
 def avatar(url: str | None, size="bigger") -> str | None:
     return url.replace("_normal.", f"_{size}.") if url and url.startswith("http") else None
 
@@ -89,6 +98,7 @@ class Store:
         t["url"] = f"https://x.com/{t['username'] or 'i'}/status/{tid}"
         t["ts"] = t["created_at"]
         t["stamp"] = (t["created_at"] or "")[:16].replace("T", " ") + "Z"
+        t["date_short"] = short_date(t["created_at"])
         t["likes_c"], t["retweets_c"] = compact(t["likes"]), compact(t["retweets"])
         t["display_name"] = t["display_name"] or t["username"]
         if depth == 0:
@@ -110,12 +120,13 @@ class Store:
         t["rank"] = round(config.rank(t["quotes"], t["retweets"], t["score"]))
         t["replies"] = [x for x in (self.tweet(rid, 1) for rid in json.loads(r["reply_ids"] or "[]")) if x]
         t["thread"] = [x for x in (self.tweet(tid, 1) for tid in json.loads(r["thread_ids"] or "[]")) if x]
-        from .arguments import BY_ID
-        t["arguments"] = [BY_ID[a] for a in json.loads(r["arguments"] or "[]") if a in BY_ID]
+        t["arguments"] = [ARGS[a] for a in json.loads(r["arguments"] or "[]") if a in ARGS]
         return t
 
 
 SHOWN = db.shown()
+# Arguments from arguments.json, with URL slugs (hyphens) for their pages.
+ARGS = {a["id"]: dict(a, slug=a["id"].replace("_", "-")) for a in arguments.ARGUMENTS}
 BY_RANK = "ORDER BY aco_rank(r.quotes, t.retweets, r.score) DESC, t.likes DESC"
 
 
@@ -156,6 +167,32 @@ def build(con, out_dir: Path = config.OUT_DIR):
     for i, t in enumerate(notable, 1):
         t["obs"] = i
 
+    # Arguments: each one's opinions (ranked, all stances) and counts per stance; each stance's
+    # most common arguments.
+    by_arg = {a: [] for a in ARGS}
+    for s in stances:
+        for t in items_by_slug[s["slug"]]:
+            for a in t["arguments"]:
+                by_arg[a["id"]].append(t)
+    by_rank_key = lambda t: (-t["rank"], -(t["likes"] or 0))
+    arg_pages = []
+    for a in ARGS.values():
+        items = sorted(by_arg[a["id"]], key=by_rank_key)
+        per = {s["slug"]: sum(1 for t in items if t["stance"]["slug"] == s["slug"]) for s in config.STANCES}
+        arg_pages.append(dict(a, items=items, n=len(items),
+                              per_stance=[dict(s, count=per[s["slug"]]) for s in config.STANCES]))
+    families = [dict(name=f["name"], arguments=[next(x for x in arg_pages if x["id"] == a["id"]) for a in f["arguments"]])
+                for f in arguments.TAXONOMY["families"]]
+    for s in stances:
+        arg_counts = {}
+        for t in items_by_slug[s["slug"]]:
+            for a in t["arguments"]:
+                arg_counts[a["id"]] = arg_counts.get(a["id"], 0) + 1
+        ranked = sorted(arg_counts.items(), key=lambda kv: (-kv[1], ARGS[kv[0]]["label"]))
+        top = ranked[0][1] if ranked else 1
+        s["top_args"] = [dict(ARGS[a], count=k, pct=round(100 * k / max(1, s["n"])), bar=round(100 * k / top))
+                         for a, k in ranked]
+
     # Homepage columns: each stance's top opinions of the last COLUMN_DAYS, and its newest.
     cutoff = (now - timedelta(days=COLUMN_DAYS)).isoformat()
     for s in stances:
@@ -179,6 +216,7 @@ def build(con, out_dir: Path = config.OUT_DIR):
 
     env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=True)
     env.filters["compact"] = compact
+    env.globals["base"] = config.BASE  # imported macros (tweet.html) don't see the render context
     common = dict(site_name=config.SITE_NAME, base=config.BASE, umami_script=config.UMAMI_SCRIPT,
                   umami_id=config.UMAMI_WEBSITE_ID, built_at=now.isoformat(timespec="seconds"),
                   n_reports=sum(counts.values()), n_people=len(people), github=config.GITHUB_URL,
@@ -186,6 +224,7 @@ def build(con, out_dir: Path = config.OUT_DIR):
                   summarizer=config.SUMMARY_MODEL_NAME, min_score=config.MIN_SCORE, stances=stances,
                   rank_quote=config.RANK_QUOTE, rank_rt=config.RANK_RT, rank_cap=config.RANK_RT_CAP,
                   rank_score=config.RANK_SCORE, searches=config.SEARCHES, start_date=config.START_DATE,
+                  tagger=config.TAG_MODEL_NAME, args_version=arguments.VERSION,
                   last_entry=last_entry[:16].replace("T", " ") + "Z" if last_entry else "")
 
     tmp = out_dir.with_name(out_dir.name + ".tmp")
@@ -203,11 +242,10 @@ def build(con, out_dir: Path = config.OUT_DIR):
     for p in people:
         items = reports(f"SELECT r.* FROM reports r JOIN tweets t USING(tweet_id) "
                         f"WHERE lower(t.username)=? AND {SHOWN} {BY_RANK}", p["key"], config.MIN_SCORE)
-        per_stance = {}
-        for t in items:
-            per_stance[t["stance"]["slug"]] = per_stance.get(t["stance"]["slug"], 0) + 1
-        chips = [dict(s, count=per_stance[s["slug"]]) for s in config.STANCES if s["slug"] in per_stance]
-        page(f"person/{p['key']}", "person.html", person=p, items=items, chips=chips)
+        page(f"person/{p['key']}", "person.html", person=p, items=items)
+    for a in arg_pages:
+        page(f"argument/{a['slug']}", "argument.html", arg=a, items=a["items"])
+    page("arguments", "arguments.html", families=families)
     page("status", "status.html", s=status.collect(con))
     page("about", "about.html")
     shutil.copy(TEMPLATES / "favicon.svg", tmp / "favicon.svg")

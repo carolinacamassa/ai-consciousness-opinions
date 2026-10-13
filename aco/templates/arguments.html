@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Arguments · {{ site_name }}{% endblock %}
+{% block description %}The arguments people make about AI consciousness and moral status, and the opinions that make each one.{% endblock %}
+
+{% block body %}
+<nav class="crumbs"><a class="home" href="{{ base }}">← {{ site_name }}</a></nav>
+<header class="page-head">
+  <div class="kicker">Index · list v{{ args_version }}</div>
+  <h1>Arguments</h1>
+  <p class="def">The reasons people give, grouped in families.</p>
+</header>
+<main>
+{% for f in families %}
+<section class="family" aria-labelledby="f-{{ loop.index }}">
+  <div class="sec-head">
+    <span class="sec-n">§{{ loop.index }}</span>
+    <h2 id="f-{{ loop.index }}">{{ f.name }}</h2>
+  </div>
+  <div class="arglist">
+    {% for a in f.arguments %}
+    <article class="argcard">
+      <h3><a href="{{ base }}argument/{{ a.slug }}/">{{ a.label }}</a></h3>
+      <p>{{ a.definition }}</p>
+      <div class="counts">
+        <span class="muted">{{ a.n }} {{ "opinion" if a.n == 1 else "opinions" }}{{ ":" if a.n }}</span>
+        {% for s in a.per_stance %}{% if s.count %}<span class="chip" style="--c:{{ s.color }}">{{ s.name }} {{ s.count }}</span>{% endif %}{% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+</main>
+{% endblock %}

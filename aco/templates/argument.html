@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "tweet.html" import card %}
+
+{% block title %}{{ arg.label }} · {{ site_name }}{% endblock %}
+{% block description %}{{ arg.definition }}{% endblock %}
+
+{% block body %}
+<nav class="crumbs"><a class="home" href="{{ base }}">{{ site_name }}</a><a href="{{ base }}arguments/">all arguments</a></nav>
+<header class="page-head">
+  <div class="kicker">Argument · {{ arg.family }}</div>
+  <h1>{{ arg.label }}</h1>
+  <p class="def">{{ arg.definition }}</p>
+  <p class="def" style="font-style: italic">e.g. “{{ arg.example }}”</p>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: 13px">
+    <span class="muted">made in {{ arg.n }} {{ "opinion" if arg.n == 1 else "opinions" }}:</span>
+    {% for s in arg.per_stance %}{% if s.count %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }} {{ s.count }}</a>{% endif %}{% endfor %}
+  </div>
+</header>
+<main>
+<section data-sortable style="margin-top: 32px">
+  <div class="toolbar">
+    <h2>Opinions</h2>
+    <div class="sec-tools" role="group" aria-label="Sort opinions">
+      <button type="button" data-sort="rank" aria-pressed="true">top</button>
+      <button type="button" data-sort="time" aria-pressed="false">newest</button>
+    </div>
+  </div>
+  <div class="list">{% for t in items %}{{ card(t, current=arg.id) }}{% else %}<p class="muted">No opinion makes this argument yet.</p>{% endfor %}</div>
+  <div class="more-row"><button type="button" class="more hidden">+ show more</button></div>
+</section>
+</main>
+{% endblock %}
