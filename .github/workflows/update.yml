@@ -1,0 +1,107 @@
+name: Update site
+
+# Every 3 hours: search the Community Archive for new tweets, grade them, rebuild the
+# site and publish it to GitHub Pages. The SQLite database is kept between runs as a
+# single gzipped file on the `data` branch, which each run overwrites.
+on:
+  schedule:
+    - cron: "23 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "Also search this many past days (0 = normal update). Needed once if the data branch doesn't exist yet."
+        type: number
+        default: 0
+
+concurrency:
+  group: update-site
+  cancel-in-progress: false  # never kill a run halfway through paid grading
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write  # to save the database on the data branch
+    env:
+      BACKFILL_DAYS: ${{ inputs.backfill_days || 0 }}
+      ACO_SITE_URL: https://${{ github.repository_owner }}.github.io
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Restore database
+        id: restore
+        run: |
+          # A project site is served under /<repo>/; the build needs to know for its links.
+          echo "ACO_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
+          mkdir -p data
+          set +e; git ls-remote --exit-code --heads origin data > /dev/null; found=$?; set -e
+          if [ "$found" -eq 0 ]; then
+            git fetch --depth=1 origin data
+            git show FETCH_HEAD:aco.sqlite.gz | gunzip > data/aco.sqlite
+            echo "restored=true" >> "$GITHUB_OUTPUT"
+          elif [ "$found" -eq 2 ] && [ "$BACKFILL_DAYS" -gt 0 ]; then
+            echo "No data branch yet: starting a fresh database with a $BACKFILL_DAYS-day backfill."
+            echo "restored=false" >> "$GITHUB_OUTPUT"
+          else
+            # Without the saved database the run would publish a near-empty site and then
+            # overwrite the data branch, so stop instead.
+            echo "::error::Could not restore the database from the data branch (git ls-remote exit $found). To start from scratch, run this workflow manually with backfill_days set."
+            exit 1
+          fi
+
+      - name: Update
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::Add an OPENROUTER_API_KEY repository secret (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          if [ "$BACKFILL_DAYS" -gt 0 ]; then
+            uv run aco backfill --days "$BACKFILL_DAYS"
+            uv run aco classify
+            uv run aco quotes
+            uv run aco videos
+            uv run aco summarize --force
+            uv run aco build
+          else
+            uv run aco update
+          fi
+
+      - name: Save database
+        # Also after a failed update, so grades already paid for are kept; but never when
+        # the restore failed, which would replace the saved database with an empty one.
+        if: always() && steps.restore.outputs.restored != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          uv run python -c "import sqlite3; c = sqlite3.connect('data/aco.sqlite'); c.execute('PRAGMA wal_checkpoint(TRUNCATE)'); c.execute('PRAGMA journal_mode=DELETE'); c.close()"
+          tmp=$(mktemp -d)
+          gzip -9 -c data/aco.sqlite > "$tmp/aco.sqlite.gz"
+          cd "$tmp"
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add aco.sqlite.gz
+          git commit -q -m "Database after run $GITHUB_RUN_ID"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -23,8 +23,8 @@ cap on summaries are new.
    question, news, model output, joke, off topic), how much substance it has (1-10), and the author's point in a
    few words. Tweets that only relay what a model said about itself are left out. About $0.0012 per tweet.
 4. **Counts quotes**: distinct archive accounts that quote-tweeted each opinion.
-5. **Summarizes** each stance with Claude Opus 5.5, at most daily and only when new opinions arrived, from the
-   stance's strongest opinions with at most four per account (`aco/summarize.py`).
+5. **Summarizes** each stance with Claude Opus 5.5, at most weekly and only when new opinions arrived, from the
+   stance's strongest opinions with at most four per account (`aco/summarize.py`). Each summary costs about $0.45.
 6. **Builds** a static site in `dist/` plus plain-text exports for LLMs (`/llms.txt`, `/llms-full.txt`,
    `/data/<stance>.md`).
 
@@ -54,6 +54,26 @@ To serve the site under a path rather than a domain root (a GitHub Pages project
 
 Data lives in `data/aco.sqlite`, which is not committed. The stance names and definitions, the searches, the score
 threshold and the ranking weights are at the top of `aco/config.py`.
+
+## Hosting on GitHub Pages
+
+No server is needed. `.github/workflows/update.yml` runs every 3 hours, and on demand from the Actions tab. It
+restores the database from the `data` branch, runs `aco update`, saves the database back to `data` (one gzipped
+file that each run overwrites, so the branch's history doesn't grow), and publishes `dist/` to GitHub Pages at
+`https://<owner>.github.io/<repo>/`. If it can't restore the database it stops instead of publishing an empty site.
+
+One-time setup:
+
+1. Make `main` the default branch (Settings > General). Scheduled workflows only run on the default branch, and
+   Pages only deploys from it.
+2. Settings > Pages > Build and deployment > Source: **GitHub Actions**.
+3. Settings > Secrets and variables > Actions > New repository secret: `OPENROUTER_API_KEY`. A dedicated OpenRouter
+   key with a credit limit is safest.
+4. If there is no `data` branch yet, run the workflow once from the Actions tab with `backfill_days` set (60 days
+   cost about $8 to grade).
+
+The `data` branch is as public as the repository, and the database in it holds the archive tweets the site
+collected, including the ones it doesn't show.
 
 ## Data and credits
 
