@@ -5,7 +5,7 @@ name: Update site
 # single gzipped file on the `data` branch, which each run overwrites.
 on:
   schedule:
-    - cron: "23 */3 * * *"
+    - cron: "0 */3 * * *"
   workflow_dispatch:
     inputs:
       fresh_start:
