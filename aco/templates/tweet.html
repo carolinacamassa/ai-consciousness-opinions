@@ -1,21 +1,3 @@
-{% macro av(t, cls="") -%}
-{% if t.avatar %}<img class="av {{ cls }}" src="{{ t.avatar }}" alt="" loading="lazy" width="40" height="40" data-initial="{{ (t.username or '?')[0] }}">
-{%- else %}<span class="av av-ph {{ cls }}">{{ (t.username or "?")[0]|upper }}</span>{% endif %}
-{%- endmacro %}
-
-{% macro head(t, stats=True, small_av=False) -%}
-<div class="tw-head">
-  {% if small_av %}{{ av(t) }}{% endif %}
-  <span class="name">{{ t.display_name }}</span>
-  {% if t.username %}<span class="handle">@{{ t.username }}</span>{% endif %}
-  <span class="time">· <time datetime="{{ t.ts }}">{{ t.ts[:10] }}</time></span>
-  {% if stats %}<span class="stats">
-    <span title="Retweets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>{{ t.retweets_c }}</span>
-    <span title="Likes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>{{ t.likes_c }}</span>
-  </span>{% endif %}
-</div>
-{%- endmacro %}
-
 {% macro media(t) -%}
 {% if t.media %}{% set ms = t.media[:4] %}
 <div class="media n{{ ms|length }}">
@@ -25,7 +7,7 @@
     {% if m.type == 'animated_gif' %}autoplay muted loop{% else %}controls{% endif %}
     {% if m.w and m.h %}width="{{ m.w }}" height="{{ m.h }}"{% endif %}></video>
   {% else %}
-  <a href="{{ t.url if m.type != 'photo' else m.url ~ '?name=large' }}" target="_blank" rel="noopener"{% if m.type == 'photo' %} class="ph"{% endif %}>
+  <a href="{{ t.url if m.type != 'photo' else m.url ~ '?name=large' }}" target="_blank" rel="noopener"{% if m.type == 'photo' %} class="ph"{% endif %} aria-label="{{ 'Open image' if m.type == 'photo' else 'Play on X' }}">
     <img src="{{ m.url }}?name=small" alt="" loading="lazy" {% if m.w and m.h %}width="{{ m.w }}" height="{{ m.h }}"{% endif %}>
     {% if m.type != 'photo' %}<span class="play"></span>{% endif %}
   </a>
@@ -35,72 +17,66 @@
 {% endif %}
 {%- endmacro %}
 
-{% macro text(t) -%}
-{% if t.html %}<div class="tw-text">{{ t.html }}</div>{% endif %}
+{# Authors of shown opinions have a page here; anyone else (replies, quoted tweets) links to X. #}
+{% macro who(t, own=True) -%}
+<div class="who"><b>{{ t.display_name }}</b>{% if t.username %} <a class="handle" href="{{ base ~ 'person/' ~ t.username|lower ~ '/' if own else 'https://x.com/' ~ t.username }}"{% if not own %} target="_blank" rel="noopener"{% endif %}>@{{ t.username }}</a>{% endif %}</div>
 {%- endmacro %}
 
-{% macro chips(t, link) -%}
-{% if t.stance %}{% set s = t.stance %}
-  {% if link %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a>
-  {% else %}<span class="chip" style="--c:{{ s.color }}">{{ s.name }}</span>{% endif %}
-{% endif %}
+{% macro chip(s, link=True) -%}
+{% if s %}{% if link %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a>{% else %}<span class="chip" style="--c:{{ s.color }}">{{ s.name }}</span>{% endif %}{% endif %}
 {%- endmacro %}
 
-{% macro card(t, compact=False, link_stance=True, tags_top=False, show_gist=None) %}
-{% set show_gist = (not compact) if show_gist is none else show_gist %}
-<article class="tw{% if compact %} compact{% endif %}" data-rank="{{ t.rank or 0 }}" data-quotes="{{ t.quotes or 0 }}" data-rt="{{ t.retweets or 0 }}" data-likes="{{ t.likes or 0 }}" data-time="{{ t.ts }}">
-  {% if tags_top and (t.stance or (show_gist and t.claim)) %}<div class="tw-tags">{{ chips(t, link_stance) }}{% if show_gist and t.claim %}<span class="gist">{{ t.claim }}</span>{% endif %}</div>{% endif %}
-  {% if t.parent and not compact %}
-  <div class="parent">
-    <div class="rail">{{ av(t.parent) }}</div>
-    <div class="tw-body">
-      {{ head(t.parent, stats=False) }}
-      {{ text(t.parent) }}
-      {{ media(t.parent) }}
-    </div>
+{# Compact observation entry, for the homepage columns. #}
+{% macro entry(t) %}
+<article class="entry">
+  <div class="stamp"><time datetime="{{ t.ts }}">{{ t.stamp }}</time></div>
+  {{ who(t) }}
+  {% if t.html %}<p class="txt">{{ t.html }}</p>{% endif %}
+  <div class="entry-notes">
+    {% if t.media %}<span>[fig. attached]</span>{% endif %}
+    {% if t.quoted %}<span>[quoting @{{ t.quoted.username }}]</span>{% endif %}
+    {% if t.thread %}<span>[thread · {{ t.thread|length }} more]</span>{% endif %}
+    <span class="dbg">substance {{ t.score }} · {{ t.kind }} · rank {{ t.rank }}</span>
+    <a href="{{ t.url }}" target="_blank" rel="noopener">view on X ↗</a>
+  </div>
+</article>
+{% endmacro %}
+
+{# Full card, for stance, person and notable lists. #}
+{% macro card(t, link_stance=True, label=None) %}
+<article class="card" data-rank="{{ t.rank or 0 }}" data-likes="{{ t.likes or 0 }}" data-time="{{ t.ts }}">
+  <div class="card-strip">
+    <span class="stamp"><time datetime="{{ t.ts }}">{{ t.stamp }}</time></span>
+    <span>{% if label %}<span class="muted">{{ label }}</span> {% endif %}{{ chip(t.stance, link_stance) }}</span>
+  </div>
+  {{ who(t) }}
+  {% if t.html %}<p class="txt">{{ t.html }}</p>{% endif %}
+  {{ media(t) }}
+  {% if t.thread %}
+  <details class="thread">
+    <summary>{{ t.thread|length }} more {{ "tweet" if t.thread|length == 1 else "tweets" }} in this thread</summary>
+    {% for x in t.thread %}<div class="thread-tweet">{% if x.html %}<p class="txt">{{ x.html }}</p>{% endif %}{{ media(x) }}</div>{% endfor %}
+  </details>
+  {% endif %}
+  {% if t.quoted %}
+  <div class="quote">
+    <div class="label">quoting <b>{{ t.quoted.display_name }}</b> @{{ t.quoted.username }} · {{ t.quoted.stamp }}</div>
+    {% if t.quoted.html %}<p class="txt">{{ t.quoted.html }}</p>{% endif %}
+    {{ media(t.quoted) }}
   </div>
   {% endif %}
-  <div class="tw-row">
-    {{ av(t) }}
-    <div class="tw-body">
-      {{ head(t) }}
-      {% if t.reply_to_username and (compact or not t.parent) %}<div class="replying">Replying to <a href="https://x.com/{{ t.reply_to_username }}" target="_blank" rel="noopener">@{{ t.reply_to_username }}</a></div>{% endif %}
-      {{ text(t) }}
-      {{ media(t) }}
-      {% if t.thread %}
-      {% if compact %}<div class="thread-note">Thread · {{ t.thread|length }} more {{ "tweet" if t.thread|length == 1 else "tweets" }}</div>
-      {% else %}
-      <details class="thread">
-        <summary>{{ t.thread|length }} more {{ "tweet" if t.thread|length == 1 else "tweets" }} in this thread</summary>
-        {% for x in t.thread %}<div class="thread-tweet">{{ text(x) }}{{ media(x) }}</div>{% endfor %}
-      </details>
-      {% endif %}
-      {% endif %}
-      {% if t.quoted %}
-      <div class="quote" data-href="{{ t.quoted.url }}">
-        {{ head(t.quoted, stats=False, small_av=True) }}
-        {{ text(t.quoted) }}
-        {{ media(t.quoted) }}
-      </div>
-      {% endif %}
-      <div class="tw-foot">
-        {% if not tags_top %}{{ chips(t, link_stance) }}{% endif %}
-        {% if t.claim and show_gist and not tags_top %}<span class="gist">{{ t.claim }}</span>{% endif %}
-        {% if t.score is not none %}<span class="dbg" title="{{ t.claim }}">substance {{ t.score }}/10 · {{ t.kind }}{% if t.rank is defined %} · rank {{ t.rank }}{% endif %}{% if not show_gist and t.claim %} · {{ t.claim }}{% endif %}</span>{% endif %}
-        <a class="xlink" href="{{ t.url }}" target="_blank" rel="noopener">View on X ↗</a>
-      </div>
-      {% if t.replies and not compact %}
-      <details class="replies">
-        <summary>{{ t.replies|length }} top {{ "reply" if t.replies|length == 1 else "replies" }}</summary>
-        {% for r in t.replies %}
-        <div class="reply">
-          {{ av(r) }}
-          <div class="tw-body">{{ head(r) }}{{ text(r) }}{{ media(r) }}</div>
-        </div>
-        {% endfor %}
-      </details>
-      {% endif %}
-    </div>
-  </div>
+  {% if t.replies %}
+  <details class="replies">
+    <summary>{{ t.replies|length }} top {{ "reply" if t.replies|length == 1 else "replies" }} (context, not counted)</summary>
+    {% for r in t.replies %}
+    <div class="reply">{{ who(r, False) }}{% if r.html %}<p class="txt">{{ r.html }}</p>{% endif %}{{ media(r) }}</div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <div class="card-foot"><div>
+    <span class="muted">likes {{ t.likes_c }} · rt {{ t.retweets_c }}{% if t.quotes %} · quoted by {{ t.quotes }} archive accounts{% endif %}</span>
+    <span class="dbg">substance {{ t.score }} · {{ t.kind }} · rank {{ t.rank }}{% if t.claim %} · {{ t.claim }}{% endif %}</span>
+    <a href="{{ t.url }}" target="_blank" rel="noopener">view on X ↗</a>
+  </div></div>
 </article>
 {% endmacro %}

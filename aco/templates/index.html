@@ -1,151 +1,111 @@
 {% extends "base.html" %}
-{% from "tweet.html" import card %}
-
-{% block style %}
-.split { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 36px; }
-.side { position: relative; min-height: 760px; }
-.feed { position: absolute; top: 48px; bottom: 0; left: 0; right: 0; overflow-y: auto; scrollbar-width: thin; padding-right: 4px; }
-.feed::after { content: ""; position: sticky; display: block; bottom: 0; height: 40px; margin-top: -40px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
-.more-row { margin-top: 16px; }
-.notable-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
-.notable-list.masonry { display: flex; align-items: flex-start; }
-.notable-list.masonry > .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-.notable-list .tw { margin: 0; }
-.notable-list .tw-text { -webkit-line-clamp: 8; }
-.notable-list .media { max-width: none; }
-.notable-list .media img { max-height: 200px; }
-.notable-list .media.n1 img { height: 200px; }
-.notable-list .media video { max-height: 260px; }
-.notable-list .tw-head .handle { display: none; }
-.notable-list .quote .tw-text { -webkit-line-clamp: 4; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.notable-list .quote .media img, .notable-list .quote .media.n1 img { height: auto; max-height: 120px; }
-.tabs { display: none; gap: 8px; margin-bottom: 18px; }
-.tab { font: var(--title-w) 15px var(--display); background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 7px 16px; cursor: pointer; }
-.tab.on { color: var(--text); border-color: var(--text-2); }
-
-.models { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-.mc { border: 1.5px solid var(--c); background: var(--surface); border-radius: 14px; padding: 18px 20px 16px; display: flex; flex-direction: column; min-width: 0; }
-.mc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.mc-name { font: var(--title-w) 24px/1.2 var(--display); letter-spacing: -0.01em; text-decoration: underline; text-decoration-color: var(--c); text-decoration-thickness: 2px; text-underline-offset: 5px; }
-.mc-name:hover { color: var(--c); }
-.mc-n { font: 12px var(--mono); color: var(--muted); }
-.mc-one { font: var(--text-w) 19px/1.35 var(--display); margin: 14px 0 0; }
-.mc-one b { font-weight: var(--emph-w); font-style: italic; }
-.mc-agg { font-size: 13.5px; color: var(--text-2); margin: 10px 0 0; }
-.mc-blurb { font-size: 13.5px; color: var(--muted); margin: 8px 0 0; }
-.mc-pending { font-size: 13.5px; color: var(--muted); margin: 14px 0 0; font-style: italic; }
-.mc-top-tweet { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
-.mc-top-tweet summary { cursor: pointer; list-style: none; font-size: 13px; color: var(--muted); display: flex; gap: 6px; white-space: nowrap; overflow: hidden; }
-.mc-top-tweet summary::-webkit-details-marker { display: none; }
-.mc-top-tweet summary::before { content: "▸"; }
-.mc-top-tweet[open] summary::before { content: "▾"; }
-.mc-top-tweet summary span { overflow: hidden; text-overflow: ellipsis; }
-.mc-top-tweet .tw { margin-top: 10px; }
-.mc-top-tweet .tw-head .handle { display: none; }
-.mc-link { margin-top: auto; padding-top: 14px; font-size: 13px; color: var(--text-2); }
-.mc-link:hover { color: var(--text); }
-
-.people { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
-.person { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 18px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); min-width: 0; }
-.person:hover { border-color: var(--muted); }
-.person .av { width: 64px; height: 64px; }
-.person .nm { font-weight: 600; margin-top: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.person .hd { color: var(--muted); font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.person .st { font: 12px var(--mono); color: var(--text-2); margin-top: 8px; }
-
-@media (max-width: 1000px) {
-  .notable-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .people { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (max-width: 900px) {
-  .split { grid-template-columns: minmax(0, 1fr); }
-  .split h2.col-title { display: none; }
-  .tabs { display: flex; }
-  .side { min-height: 0; }
-  .feed { position: static; overflow: visible; }
-  .feed::after { display: none; }
-  .tab-off { display: none; }
-}
-@media (max-width: 640px) {
-  .notable-list { grid-template-columns: minmax(0, 1fr); }
-  .people { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-{% endblock %}
+{% from "tweet.html" import entry, card %}
 
 {% block body %}
-<header class="masthead wrap">
-  <nav class="topnav"><a href="{{ base }}about/">About</a><a href="{{ github }}" target="_blank" rel="noopener">GitHub</a></nav>
-  <h1 class="brand">{% include "logo.svg" %}{{ site_name }}</h1>
-  <p class="dek">What people on X say about whether AI systems are conscious or owed moral consideration, sorted by stance. Built from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, so it reflects the accounts there, not public opinion.</p>
-  <p class="meta">The collection contains {{ '{:,}'.format(n_reports) }} opinions by {{ '{:,}'.format(n_people) }} accounts. <a class="raw" href="{{ base }}llms.txt">Raw data for LLMs ↗</a></p>
-</header>
-
-<main class="wrap">
-<section>
-  <div class="tabs" role="tablist">
-    <button class="tab on" data-tab="models">Stances</button>
-    <button class="tab" data-tab="latest">Latest <span class="dot" style="display:inline-block;margin-left:4px;vertical-align:middle"></span></button>
-  </div>
-  <div class="split">
-    <div id="models">
-      <h2 class="col-title">Opinions by Stance</h2>
-      <div class="models">
-        {% for s in stances %}
-        <article class="mc" style="--c:{{ s.color }}">
-          <div class="mc-top">
-            <a class="mc-name" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a>
-            <span class="mc-n">{{ s.n }} opinions · {{ s.share }}%</span>
-          </div>
-          <p class="mc-blurb">{{ s.blurb }}</p>
-          {% if s.summary %}
-            <p class="mc-one"><b>{{ s.one_head }}</b> {{ s.one_rest }}</p>
-            <p class="mc-agg">{{ s.summary.aggregate }}</p>
-          {% else %}
-            <p class="mc-pending">Summary coming once enough opinions are in.</p>
-          {% endif %}
-          {% if s.top %}
-          <details class="mc-top-tweet">
-            <summary><span>Top opinion · @{{ s.top.username }}</span></summary>
-            {{ card(s.top, compact=True) }}
-          </details>
-          {% endif %}
-          <a class="mc-link" href="{{ base }}stance/{{ s.slug }}/">All {{ s.n }} opinions →</a>
-        </article>
-        {% endfor %}
-      </div>
+<header class="masthead">
+  <nav class="topnav" aria-label="Site"><a href="{{ base }}about/">about</a><a href="{{ github }}" target="_blank" rel="noopener">github</a><a href="{{ base }}llms.txt">llms.txt</a></nav>
+  <div class="head-row">
+    <div class="head-main">
+      <div class="kicker">Observation log · collected from X</div>
+      <h1 class="brand">{{ site_name }}</h1>
+      <p class="dek">What people on X say about whether AI systems are conscious or owed moral consideration, sorted by stance. Built from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, so it reflects the accounts there, not public opinion.</p>
     </div>
-    <aside class="side tab-off" id="latest">
-      <h2 class="col-title">Latest <small class="live"><span class="dot"></span><time datetime="{{ built_at }}" data-long="updated % ago">updated</time></small></h2>
-      <div class="feed">
-        {% for t in latest %}{{ card(t, compact=True, tags_top=True) }}{% endfor %}
-      </div>
+    <aside class="panel" aria-label="Signs of life">
+      <dl>
+        <dt>opinions</dt><dd>{{ '{:,}'.format(n_reports) }}</dd>
+        <dt>accounts</dt><dd>{{ '{:,}'.format(n_people) }}</dd>
+        <dt>since</dt><dd>{{ start_date }}</dd>
+        <dt>last entry</dt><dd>{{ last_entry }}</dd>
+      </dl>
+      {% if viz.weeks %}
+      <h3>Tweets about the topic, per week</h3>
+      {{ viz.line }}
+      {% endif %}
+      {% if viz.months %}
+      <h3>Share of opinions by stance, per month</h3>
+      <div class="legend">{% for s in stances %}<span><i style="--c:{{ s.color }}"></i>{{ s.name }}</span>{% endfor %}</div>
+      {{ viz.stack }}
+      {% endif %}
+      <p class="note">Original tweets and quote tweets in the archive, which grows as people upload, so this shows activity there, not on X as a whole.{% if viz.months and viz.months[-1].partial %} * {{ viz.months[-1].long }}.{% endif %}</p>
+      <details class="viz-table">
+        <summary>show as a table</summary>
+        <table>
+          <caption class="sr-only">Share of shown opinions by stance, per month</caption>
+          <tr><th scope="col">month</th>{% for s in stances %}<th scope="col">{{ s.name|lower }}</th>{% endfor %}<th scope="col">n</th></tr>
+          {% for m in viz.months %}<tr><td>{{ m.long }}</td>{% for s in stances %}<td>{{ m.shares[s.slug]|round|int }}%</td>{% endfor %}<td>{{ m.total }}</td></tr>{% endfor %}
+        </table>
+        <table>
+          <caption class="sr-only">Tweets about the topic per week</caption>
+          <tr><th scope="col">week of</th><th scope="col">tweets</th></tr>
+          {% for w in viz.weeks %}<tr><td>{{ w.label }}</td><td>{{ w.n }}</td></tr>{% endfor %}
+        </table>
+      </details>
+      <a class="raw" href="{{ base }}llms.txt">raw data for LLMs ↗</a>
+      <div class="viz-tip" role="status" hidden></div>
     </aside>
   </div>
-</section>
+</header>
 
-<section id="notable">
-  <h2>Most Notable Opinions</h2>
-  <div class="notable-list" id="notable-list">
-    {% for t in notable %}
-      <div class="{{ 'hidden' if loop.index > 6 }}">{{ card(t, compact=True, tags_top=True) }}</div>
+<main>
+<section aria-labelledby="h-stances" style="margin-top: 8px">
+  <div class="sec-head">
+    <span class="sec-n">§1</span>
+    <h2 id="h-stances">Opinions by stance</h2>
+    <span class="sec-meta">one column per stance</span>
+    <div class="sec-tools" role="group" aria-label="Order the columns">
+      <button type="button" data-order="top" aria-pressed="true">top</button>
+      <button type="button" data-order="new" aria-pressed="false">newest</button>
+    </div>
+  </div>
+  <div class="stance-tabs" role="group" aria-label="Show a stance">
+    {% for s in stances %}<button type="button" data-tab="{{ s.slug }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ s.name }}</button>{% endfor %}
+  </div>
+  <div class="cols">
+    {% for s in stances %}
+    <article class="col{{ '' if loop.first else ' tab-off' }}" data-col="{{ s.slug }}" style="--c:{{ s.color }}">
+      <div class="col-strip"><span>Stance {{ s.letter }}</span><span class="when" data-top="top · {{ s.window }}" data-new="newest">top · {{ s.window }}</span></div>
+      <div class="col-head">
+        <h3><span class="swatch" aria-hidden="true"></span><a href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}</a></h3>
+        <p class="col-def">{{ s.blurb }}</p>
+      </div>
+      <div class="entries" data-list="top">{% for t in s.top_items %}{{ entry(t) }}{% else %}<p class="entry muted">No opinions yet.</p>{% endfor %}</div>
+      <div class="entries hidden" data-list="new">{% for t in s.new_items %}{{ entry(t) }}{% endfor %}</div>
+      <div class="col-foot"><a href="{{ base }}stance/{{ s.slug }}/">all {{ s.name|lower }} opinions →</a></div>
+    </article>
     {% endfor %}
   </div>
-  {% if notable|length > 6 %}<div class="more-row"><button class="btn" id="notable-more">See more</button></div>{% endif %}
 </section>
 
-<section id="people">
-  <h2>Most Active Voices</h2>
-  <div class="people" id="people-list">
+<section aria-labelledby="h-notable">
+  <div class="sec-head">
+    <span class="sec-n">§2</span>
+    <h2 id="h-notable">Most notable opinions</h2>
+    <span class="sec-meta">all time, ranked by quotes, retweets and substance, taking each stance in turn</span>
+  </div>
+  <div class="notable" id="notable">
+    {% for t in notable %}<div class="{{ 'hidden' if loop.index > 6 }}">{{ card(t, label="obs. " ~ t.obs) }}</div>{% endfor %}
+  </div>
+  {% if notable|length > 6 %}<div class="more-row"><button type="button" id="notable-more">+ show more observations</button></div>{% endif %}
+</section>
+
+<section aria-labelledby="h-people" id="people">
+  <div class="sec-head">
+    <span class="sec-n">§3</span>
+    <h2 id="h-people">Most active voices</h2>
+    <span class="sec-meta">accounts with the most opinions shown here</span>
+  </div>
+  <div class="ruled"><div class="inner">
+    <div class="row th" aria-hidden="true"><span>#</span><span>account</span><span>opinions</span><span></span></div>
     {% for p in people %}
-    <a class="person{{ ' hidden' if loop.index > 5 }}" href="{{ base }}person/{{ p.key }}/">
-      {% if p.avatar %}<img class="av" src="{{ p.avatar }}" alt="" loading="lazy" width="64" height="64" data-initial="{{ p.username[0] }}">{% else %}<span class="av av-ph">{{ p.username[0]|upper }}</span>{% endif %}
-      <span class="nm">{{ p.name or p.username }}</span>
-      <span class="hd">@{{ p.username }}</span>
-      <span class="st">{{ p.n }} {{ "opinion" if p.n == 1 else "opinions" }}</span>
-    </a>
+    <div class="row{{ ' hidden' if loop.index > 10 }}">
+      <span class="muted">{{ p.rank }}</span>
+      <span><a href="{{ base }}person/{{ p.key }}/"><b>{{ p.name or p.username }}</b></a> <span class="muted">@{{ p.username }}</span></span>
+      <span><b>{{ p.n }}</b></span>
+      <span class="bar" aria-hidden="true"><span style="width: {{ p.pct }}%"></span></span>
+    </div>
     {% endfor %}
-  </div>
-  {% if people|length > 5 %}<div class="more-row"><button class="btn" id="people-more">Show more</button></div>{% endif %}
+  </div></div>
+  {% if people|length > 10 %}<div class="more-row"><button type="button" id="people-more">+ show more accounts</button></div>{% endif %}
 </section>
 </main>
 {% endblock %}
@@ -153,44 +113,85 @@
 {% block script %}
 <script>
 (function () {
-  // Masonry for Most Notable: each card goes to the currently shortest column,
-  // keeping rank order left to right. Re-run on resize and "see more".
-  var list = document.getElementById("notable-list");
-  var items = Array.prototype.slice.call(list.children);
-  function layout() {
-    var n = innerWidth <= 640 ? 1 : innerWidth <= 1000 ? 2 : 3;
-    list.innerHTML = "";
-    list.classList.add("masonry");
-    var cols = [];
-    for (var i = 0; i < n; i++) { var c = document.createElement("div"); c.className = "col"; list.appendChild(c); cols.push(c); }
-    items.forEach(function (it) {
-      if (it.classList.contains("hidden")) { cols[0].appendChild(it); return; }
-      cols.reduce(function (a, b) { return b.offsetHeight < a.offsetHeight ? b : a; }).appendChild(it);
-    });
-    window.mbrReadMore && window.mbrReadMore(list);
-  }
-  layout();
-  var w = innerWidth;
-  addEventListener("resize", function () { if (innerWidth !== w) { w = innerWidth; layout(); } });
-  var pm = document.getElementById("people-more");
-  if (pm) pm.addEventListener("click", function () {
-    var hidden = document.querySelectorAll("#people-list > .person.hidden");
-    for (var i = 0; i < Math.min(10, hidden.length); i++) hidden[i].classList.remove("hidden");
-    if (hidden.length <= 10) pm.remove();
-  });
-  var more = document.getElementById("notable-more");
-  if (more) more.addEventListener("click", function () {
-    var hidden = items.filter(function (it) { return it.classList.contains("hidden"); });
-    hidden.slice(0, 6).forEach(function (it) { it.classList.remove("hidden"); });
-    if (hidden.length <= 6) more.remove();
-    layout();
-  });
-  document.querySelectorAll(".tab").forEach(function (b) {
+  // Columns: one top/newest switch for all three; on narrow screens, one stance at a time.
+  document.querySelectorAll("[data-order]").forEach(function (b) {
     b.addEventListener("click", function () {
-      document.querySelectorAll(".tab").forEach(function (x) { x.classList.toggle("on", x === b); });
-      document.getElementById("models").classList.toggle("tab-off", b.dataset.tab !== "models");
-      document.getElementById("latest").classList.toggle("tab-off", b.dataset.tab !== "latest");
+      var order = b.dataset.order;
+      document.querySelectorAll("[data-order]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.querySelectorAll(".col").forEach(function (col) {
+        col.querySelectorAll("[data-list]").forEach(function (l) { l.classList.toggle("hidden", l.dataset.list !== order); });
+        var w = col.querySelector(".when"); w.textContent = w.dataset[order];
+      });
     });
+  });
+  document.querySelectorAll("[data-tab]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-tab]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.querySelectorAll(".col").forEach(function (col) { col.classList.toggle("tab-off", col.dataset.col !== b.dataset.tab); });
+    });
+  });
+  function revealer(id, sel, n) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var hidden = document.querySelectorAll(sel);
+      for (var i = 0; i < Math.min(n, hidden.length); i++) hidden[i].classList.remove("hidden");
+      if (hidden.length <= n) btn.remove();
+      window.acoReadMore(document.getElementById("notable"));
+    });
+  }
+  revealer("notable-more", "#notable > .hidden", 6);
+  revealer("people-more", "#people .row.hidden", 20);
+
+  // Chart readouts: the same values as the table, on hover and on keyboard focus.
+  var panel = document.querySelector(".panel"), tip = panel && panel.querySelector(".viz-tip");
+  if (!tip) return;
+  function place(svg, x, y, label, value) {
+    tip.textContent = "";
+    var b = document.createElement("b"); b.textContent = value; tip.appendChild(b);
+    tip.appendChild(document.createTextNode(" " + label));
+    tip.hidden = false;
+    var box = svg.getBoundingClientRect(), pbox = panel.getBoundingClientRect(), scale = box.width / svg.viewBox.baseVal.width;
+    var left = box.left - pbox.left + x * scale, top = box.top - pbox.top + y * scale - tip.offsetHeight - 10;
+    tip.style.left = Math.max(4, Math.min(left - tip.offsetWidth / 2, panel.clientWidth - tip.offsetWidth - 4)) + "px";
+    tip.style.top = Math.max(4, top) + "px";
+  }
+  function hide() { tip.hidden = true; }
+  var line = panel.querySelector(".viz.line");
+  if (line) {
+    var pts = JSON.parse(line.dataset.points), cross = line.querySelector(".cross"), dot = line.querySelector(".hover-dot"), cur = pts.length - 1;
+    function at(i) {
+      cur = Math.max(0, Math.min(pts.length - 1, i));
+      var p = pts[cur];
+      cross.setAttribute("x1", p.x); cross.setAttribute("x2", p.x); cross.setAttribute("visibility", "visible");
+      dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); dot.setAttribute("visibility", "visible");
+      place(line, p.x, p.y, p.t, p.v + " tweets");
+    }
+    function off() { cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); hide(); }
+    line.addEventListener("pointermove", function (e) {
+      var box = line.getBoundingClientRect(), x = (e.clientX - box.left) * line.viewBox.baseVal.width / box.width, best = 0;
+      pts.forEach(function (p, i) { if (Math.abs(p.x - x) < Math.abs(pts[best].x - x)) best = i; });
+      at(best);
+    });
+    line.addEventListener("pointerleave", off);
+    line.addEventListener("focus", function () { at(cur); });
+    line.addEventListener("blur", off);
+    line.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft") { at(cur - 1); e.preventDefault(); }
+      else if (e.key === "ArrowRight") { at(cur + 1); e.preventDefault(); }
+    });
+  }
+  panel.querySelectorAll(".viz.stack .seg").forEach(function (seg) {
+    var svg = seg.ownerSVGElement;
+    function showSeg() {
+      var x = +seg.getAttribute("x") + +seg.getAttribute("width") / 2, y = +seg.getAttribute("y");
+      var tipText = seg.dataset.tip, i = tipText.indexOf(": ");
+      place(svg, x, y, tipText.slice(0, i), tipText.slice(i + 2));
+    }
+    seg.addEventListener("pointerenter", showSeg);
+    seg.addEventListener("focus", showSeg);
+    seg.addEventListener("pointerleave", hide);
+    seg.addEventListener("blur", hide);
   });
 })();
 </script>

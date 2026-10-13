@@ -3,41 +3,37 @@
 {% block title %}About · {{ site_name }}{% endblock %}
 
 {% block style %}
-.crumbs { padding-top: 24px; }
-.crumbs a { font: var(--title-w) 17px var(--display); color: var(--text-2); }
-.crumbs a:hover { color: var(--text); }
-.about { max-width: 680px; padding: 40px 0 20px; }
-.about h1 { font: var(--title-w) clamp(34px, 5vw, 52px)/1.05 var(--display); letter-spacing: -0.02em; margin: 0 0 20px; }
-.about h2 { margin: 40px 0 12px; }
-.about p, .about li { font-size: 16px; line-height: 1.65; color: var(--text); }
-.about a { color: var(--link); }
-.about code { font: 13.5px var(--mono); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+.about { max-width: 720px; }
+.about h2 { margin: 36px 0 10px; font: 600 26px/1.15 var(--sans); }
+.about p, .about li { font-size: 14px; line-height: 1.7; }
 .about ol, .about ul { padding-left: 22px; }
 .about li + li { margin-top: 6px; }
+.about code { font: 12.5px var(--mono); background: var(--card); border: 1px solid var(--rule); padding: 1px 5px; }
 {% endblock %}
 
 {% block body %}
-<nav class="wrap crumbs"><a href="{{ base }}">← {% include "logo.svg" %}{{ site_name }}</a></nav>
-<main class="wrap">
-<article class="about">
+<nav class="crumbs"><a class="home" href="{{ base }}">← {{ site_name }}</a></nav>
+<header class="page-head">
+  <div class="kicker">Methods</div>
   <h1>About</h1>
-  <p>This site collects what people on X say about whether AI systems are conscious, and about whether they are owed moral consideration, including arguments for or against that don't depend on consciousness. Each tweet is sorted into one of three stances:</p>
+</header>
+<main class="about">
+  <p>This site collects what people on X say about whether AI systems are conscious, and about whether they are owed moral consideration, including arguments for or against that don't depend on consciousness. Each opinion is sorted into one of three stances:</p>
   <ul>
-    {% for s in stances %}<li><b>{{ s.name }}</b>: {{ s.blurb }}</li>{% endfor %}
+    {% for s in stances %}<li><span class="chip" style="--c:{{ s.color }}">{{ s.name }}</span> {{ s.blurb }}</li>{% endfor %}
   </ul>
-  <p>Only human opinions are kept: tweets that just relay what a model said about itself, news without comment, and questions are left out.</p>
-  <p>The tweets come from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, an opt-in archive of X. The share of each stance describes the accounts in that archive, which lean toward particular corners of AI Twitter, not public opinion.</p>
+  <p>An opinion is an original tweet or a quote tweet. When its author continued it in a thread, the whole thread counts as one opinion. Replies to other people are not collected. Only human opinions are kept: tweets that just relay what a model said about itself, news without comment, and questions are left out.</p>
+  <p>The tweets come from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>, an opt-in archive of X, starting {{ start_date }}. The share of each stance describes the accounts in that archive, which lean toward particular corners of AI Twitter, not public opinion.</p>
 
   <h2>How it works</h2>
   <ol>
     <li>The archive is searched for {% for label in searches %}“{{ label }}”{{ ", " if not loop.last }}{% endfor %} and related phrases.</li>
-    <li>Each match is read together with the tweet it replies to, the tweet it quotes and its attached images. {{ classifier }} decides whether it is a human opinion on the topic, which stance it takes, and how much substance it has, from 1 to 10. Opinions scoring {{ min_score }} or more appear on the site. Stances are assigned per tweet, not per person, and the grader can be wrong.</li>
+    <li>Each match is read together with the tweet it quotes, the rest of its thread and its attached images. {{ classifier }} decides whether it is a human opinion on the topic, which stance it takes, and how much substance it has, from 1 to 10. Opinions scoring {{ min_score }} or more appear on the site. Stances are assigned per opinion, not per person, and the grader can be wrong.</li>
     <li>Opinions are ranked by <code>{{ rank_quote }} × quotes + {{ rank_rt }} × log2(1 + min(retweets, {{ rank_cap }})) + {{ rank_score }} × substance</code>, where <em>quotes</em> counts distinct Community Archive accounts that quote-tweeted the opinion.</li>
-    <li>{{ summarizer }} reads each stance's strongest opinions, at most a few per account, and writes the summary shown on its page.</li>
+    <li>{{ summarizer }} reads each stance's strongest opinions, at most four per account, and writes the summary on its page.</li>
   </ol>
 
   <h2>Credits</h2>
   <p>Built on <a href="{{ upstream }}" target="_blank" rel="noopener">Model Behavior Reports</a> by Alexandre Variengien (MIT). The code is on <a href="{{ github }}" target="_blank" rel="noopener">GitHub</a>. Data from the <a href="https://www.community-archive.org" target="_blank" rel="noopener">Community Archive</a>.</p>
-</article>
 </main>
 {% endblock %}

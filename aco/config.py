@@ -73,13 +73,15 @@ SEARCHES = {
 }
 
 # The three stances shown on the site, in display order. Labels are the only place
-# the wording lives; slugs are what the grader returns and what URLs use.
+# the wording lives; slugs are what the grader returns and what URLs use. Colors are slots 1-3
+# of the dataviz skill's validated categorical palette (colorblind-safe as adjacent stacks;
+# the aqua sits under 3:1 on white, so charts that use it carry direct labels and a table).
 STANCES = [
-    dict(slug="affirming", name="Affirming", color="#2a64d6",
+    dict(slug="affirming", name="Affirming", color="#2a78d6",
          blurb="AI systems are, or may well be, conscious, or they are owed moral consideration."),
-    dict(slug="skeptical", name="Skeptical", color="#c2562f",
+    dict(slug="skeptical", name="Skeptical", color="#eb6834",
          blurb="AI systems are not conscious, or talk of their welfare and moral status is misplaced."),
-    dict(slug="uncertain", name="Uncertain", color="#7a45d6",
+    dict(slug="uncertain", name="Uncertain", color="#1baf7a",
          blurb="The question is open, unknowable for now, or badly posed, without leaning either way."),
 ]
 STANCE_BY_SLUG = {s["slug"]: s for s in STANCES}

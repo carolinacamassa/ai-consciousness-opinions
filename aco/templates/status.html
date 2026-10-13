@@ -6,33 +6,34 @@
 
 {% block style %}
 .st { padding: 32px 0 20px; }
-.st h1 { font: var(--title-w) 40px/1.1 var(--display); margin: 0 0 6px; }
-.st .sub { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 36px; }
-.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-.tile .k { font: 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.tile .v { font: 500 26px/1.2 var(--sans); margin-top: 6px; }
-.tile .v small { font-size: 13px; color: var(--muted); font-weight: 400; }
-.ok { color: var(--live); } .bad { color: #c0392b; }
-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th { font: 500 11.5px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: var(--surface-2); }
+.st h1 { margin: 8px 0 6px; font: 700 clamp(36px, 5vw, 56px)/1 var(--sans); text-transform: uppercase; }
+.st h2 { margin: 36px 0 12px; font: 600 24px/1.15 var(--sans); }
+.st .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
+.tile { background: var(--card); border: 1.5px solid var(--ink); padding: 12px 14px; }
+.tile .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tile .v { font: 600 22px/1.2 var(--sans); margin-top: 6px; }
+.tile .v small { font: 400 12px var(--mono); color: var(--muted); }
+.ok { color: var(--live); } .bad { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--card); border: 1.5px solid var(--ink); }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px dashed var(--rule); white-space: nowrap; }
+th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px dashed var(--ink); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-tr:last-child td { border-bottom: 0; }
-.bar { height: 8px; border-radius: 4px; background: var(--link); min-width: 1px; }
-.scroll { overflow-x: auto; margin-bottom: 36px; }
-.err { color: #c0392b; white-space: normal; max-width: 420px; }
-.muted { color: var(--muted); }
+.costbar { height: 8px; border: 1px solid var(--ink); background: var(--ink); min-width: 1px; }
+.scroll { overflow-x: auto; }
+.err { color: var(--accent); white-space: normal; max-width: 420px; }
 {% endblock %}
 
 {% block body %}
-<main class="wrap st">
+<nav class="crumbs"><a class="home" href="{{ base }}">← {{ site_name }}</a></nav>
+<main class="st">
+  <div class="kicker">Instrument log</div>
   <h1>Pipeline status</h1>
-  <p class="sub">Built <time datetime="{{ s.now }}" data-long="% ago">{{ s.now }}</time>. Cost tracking since {{ (s.tracking_since or s.now)[:10] }}.</p>
+  <p class="sub">Built {{ s.now[:16].replace("T", " ") }}Z. Cost tracking since {{ (s.tracking_since or s.now)[:10] }}.</p>
 
   <div class="tiles">
     <div class="tile"><div class="k">Last update</div>
-      <div class="v">{% if s.last_ok %}<span class="ok">●</span> <time datetime="{{ s.last_ok.started_at }}" data-long="% ago">{{ s.last_ok.started_at[:16] }}</time>{% else %}<span class="muted">none yet</span>{% endif %}</div></div>
+      <div class="v">{% if s.last_ok %}<span class="ok">●</span> {{ s.last_ok.started_at[:16].replace("T", " ") }}Z{% else %}<span class="muted">none yet</span>{% endif %}</div></div>
     <div class="tile"><div class="k">Cost / day (7d avg)</div><div class="v">${{ '%.2f' % s.avg_week }}</div></div>
     <div class="tile"><div class="k">Cost, last 30 days</div><div class="v">${{ '%.2f' % s.month }}</div></div>
     <div class="tile"><div class="k">Opinions shown</div><div class="v">{{ s.pipeline.shown or 0 }} <small>of {{ s.pipeline.candidates }} candidates</small></div></div>
@@ -45,7 +46,7 @@ tr:last-child td { border-bottom: 0; }
         <th class="num">Runs</th><th class="num">Scanned</th><th class="num">Candidates</th><th class="num">Graded</th><th class="num">New opinions</th><th class="num">Summaries</th></tr>
     {% for d in s.table %}
     <tr><td>{{ d.day }}</td>
-      <td style="width:30%"><div class="bar" style="width: {{ (100 * d.total / s.peak)|round(1) }}%"></div></td>
+      <td style="width:30%"><div class="costbar" style="width: {{ (100 * d.total / s.peak)|round(1) }}%"></div></td>
       <td class="num"><b>${{ '%.2f' % d.total }}</b></td>
       {% for p in s.purposes %}<td class="num">${{ '%.2f' % d.cost.get(p, 0) }}</td>{% endfor %}
       <td class="num">{{ d.runs }}{% if d.errors %} <span class="bad">({{ d.errors }} err)</span>{% endif %}</td>

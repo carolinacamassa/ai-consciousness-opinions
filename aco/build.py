@@ -4,18 +4,20 @@ import html
 import json
 import re
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
-from . import config, db, export, status
+from . import charts, config, db, export, status
 
 TEMPLATES = Path(__file__).parent / "templates"
 NOTABLE_N = 48
-LATEST_N = 40
-TOP_PEOPLE = 30  # on the homepage: 5 shown, the rest behind "Show more"
+COLUMN_N = 10        # entries per stance column on the homepage
+COLUMN_DAYS = 30     # columns rank the opinions of the last this-many days...
+COLUMN_MIN = 5       # ...unless fewer than this many, then all of them
+TOP_PEOPLE = 30      # on the homepage: 10 shown, the rest behind "Show more"
 STANCE_PAGE_MAX = 1000
 
 TOKEN_RE = re.compile(r"(https?://\S+|@\w{1,15}|#\w+)")
@@ -86,6 +88,7 @@ class Store:
         t["avatar"] = avatar(t["avatar"])
         t["url"] = f"https://x.com/{t['username'] or 'i'}/status/{tid}"
         t["ts"] = t["created_at"]
+        t["stamp"] = (t["created_at"] or "")[:16].replace("T", " ") + "Z"
         t["likes_c"], t["retweets_c"] = compact(t["likes"]), compact(t["retweets"])
         t["display_name"] = t["display_name"] or t["username"]
         if depth == 0:
@@ -136,7 +139,7 @@ def build(con, out_dir: Path = config.OUT_DIR):
         one = (summary or {}).get("one_liner") or ""
         head, _, rest = one.partition(". ")
         n = counts.get(s["slug"], 0)
-        stances.append(dict(s, n=n, share=round(100 * n / total_n), summary=summary,
+        stances.append(dict(s, n=n, share=round(100 * n / total_n), summary=summary, letter="ABC"[len(stances)],
                             one_head=head + "." if rest else one, one_rest=rest,
                             top=items[0] if items else None))
 
@@ -148,8 +151,17 @@ def build(con, out_dir: Path = config.OUT_DIR):
     while len(notable) < NOTABLE_N and any(queues):
         notable += sorted((queue.pop(0) for queue in queues if queue), key=by_rank)
     notable = notable[:NOTABLE_N]
-    latest = reports(f"SELECT r.* FROM reports r WHERE {SHOWN} ORDER BY r.created_at DESC LIMIT {LATEST_N}",
-                     config.MIN_SCORE)
+    for i, t in enumerate(notable, 1):
+        t["obs"] = i
+
+    # Homepage columns: each stance's top opinions of the last COLUMN_DAYS, and its newest.
+    cutoff = (now - timedelta(days=COLUMN_DAYS)).isoformat()
+    for s in stances:
+        items = items_by_slug[s["slug"]]
+        recent = [t for t in items if t["ts"] >= cutoff]
+        s["window"] = f"last {COLUMN_DAYS} days" if len(recent) >= COLUMN_MIN else "all time"
+        s["top_items"] = (recent if len(recent) >= COLUMN_MIN else items)[:COLUMN_N]
+        s["new_items"] = sorted(items, key=lambda t: t["ts"], reverse=True)[:COLUMN_N]
 
     # Everyone with a shown opinion, most opinions first.
     people = []
@@ -159,6 +171,9 @@ def build(con, out_dir: Path = config.OUT_DIR):
                  f"WHERE {SHOWN} AND COALESCE(t.username,'') != '' GROUP BY lower(t.username) "
                  f"ORDER BY COUNT(*) DESC, MAX(t.likes) DESC", config.MIN_SCORE):
         people.append(dict(row, avatar=avatar(row["avatar"], "200x200"), key=row["username"].lower()))
+    for i, p in enumerate(people, 1):
+        p["rank"], p["pct"] = f"{i:02d}", round(100 * p["n"] / people[0]["n"])
+    last_entry = q(f"SELECT MAX(r.created_at) m FROM reports r WHERE {SHOWN}", config.MIN_SCORE)[0]["m"] or ""
 
     env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=True)
     env.filters["compact"] = compact
@@ -168,7 +183,8 @@ def build(con, out_dir: Path = config.OUT_DIR):
                   upstream=config.UPSTREAM_URL, classifier=config.CLASSIFY_MODEL_NAME,
                   summarizer=config.SUMMARY_MODEL_NAME, min_score=config.MIN_SCORE, stances=stances,
                   rank_quote=config.RANK_QUOTE, rank_rt=config.RANK_RT, rank_cap=config.RANK_RT_CAP,
-                  rank_score=config.RANK_SCORE, searches=config.SEARCHES)
+                  rank_score=config.RANK_SCORE, searches=config.SEARCHES, start_date=config.START_DATE,
+                  last_entry=last_entry[:16].replace("T", " ") + "Z" if last_entry else "")
 
     tmp = out_dir.with_name(out_dir.name + ".tmp")
     shutil.rmtree(tmp, ignore_errors=True)
@@ -179,7 +195,7 @@ def build(con, out_dir: Path = config.OUT_DIR):
         d.mkdir(parents=True, exist_ok=True)
         (d / "index.html").write_text(env.get_template(template).render(**common, **kw))
 
-    page("", "index.html", notable=notable, latest=latest, people=people[:TOP_PEOPLE])
+    page("", "index.html", notable=notable, people=people[:TOP_PEOPLE], viz=charts.build(con, now.date()))
     for s in stances:
         page(f"stance/{s['slug']}", "stance.html", stance=s, items=items_by_slug[s["slug"]])
     for p in people:

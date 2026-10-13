@@ -4,86 +4,28 @@
 {% block title %}{{ person.name or person.username }} (@{{ person.username }}) · {{ site_name }}{% endblock %}
 {% block description %}{{ person.n }} tweets by @{{ person.username }} on AI consciousness and moral status, collected from X.{% endblock %}
 
-{% block style %}
-.crumbs { padding-top: 24px; }
-.crumbs a { font: var(--title-w) 17px var(--display); color: var(--text-2); }
-.crumbs a:hover { color: var(--text); }
-.ph-head { display: flex; gap: 22px; align-items: center; padding: 36px 0 30px; border-bottom: 1px solid var(--line); }
-.ph-head .av { width: 96px; height: 96px; }
-.ph-head .av-ph { font-size: 36px; }
-.ph-head h1 { font: var(--title-w) clamp(30px, 4.4vw, 44px)/1.1 var(--display); margin: 0; letter-spacing: -0.015em; }
-.ph-head .hd { color: var(--muted); margin-top: 4px; }
-.ph-head .hd a { color: var(--link); }
-.ph-head .st { font: 13px var(--mono); color: var(--text-2); margin-top: 10px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.chips .chip span { opacity: .7; margin-left: 4px; }
-.ph-head .note { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
-.toolbar { max-width: 760px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.toolbar h2 { margin: 0; }
-.sort { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
-.sort button { font: 500 13px var(--sans); color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
-.sort button.on { background: var(--surface-2); color: var(--text); }
-.list { max-width: 760px; }
-@media (max-width: 640px) { .ph-head { gap: 16px; } .ph-head .av { width: 68px; height: 68px; } }
-{% endblock %}
-
 {% block body %}
-<nav class="wrap crumbs"><a href="{{ base }}#people">← {% include "logo.svg" %}{{ site_name }}</a></nav>
-<header class="wrap ph-head">
-  {% if person.avatar %}<img class="av" src="{{ person.avatar }}" alt="" width="96" height="96" data-initial="{{ person.username[0] }}">{% else %}<span class="av av-ph">{{ person.username[0]|upper }}</span>{% endif %}
-  <div>
-    <h1>{{ person.name or person.username }}</h1>
-    <div class="hd"><a href="https://x.com/{{ person.username }}" target="_blank" rel="noopener">@{{ person.username }} ↗</a></div>
-    <div class="st">{{ person.n }} {{ "tweet" if person.n == 1 else "tweets" }} in the collection</div>
-    <div class="chips">
-      {% for s in chips %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }}<span>{{ s.count }}</span></a>{% endfor %}
-    </div>
-    <p class="note">Stances are assigned to each tweet by {{ classifier }}, not to the person, and can be wrong.</p>
+<nav class="crumbs"><a class="home" href="{{ base }}#people">← {{ site_name }}</a></nav>
+<header class="page-head">
+  <div class="kicker">Account · {{ person.n }} {{ "opinion" if person.n == 1 else "opinions" }} in the log</div>
+  <h1>{{ person.name or person.username }}</h1>
+  <p class="def"><a href="https://x.com/{{ person.username }}" target="_blank" rel="noopener">@{{ person.username }} ↗</a></p>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px">
+    {% for s in chips %}<a class="chip" style="--c:{{ s.color }}" href="{{ base }}stance/{{ s.slug }}/">{{ s.name }} {{ s.count }}</a>{% endfor %}
   </div>
+  <p class="def" style="font-size: 12.5px; color: var(--muted)">Stances are assigned to each tweet by {{ classifier }}, not to the person, and can be wrong.</p>
 </header>
-<main class="wrap">
-<section>
+<main>
+<section data-sortable style="margin-top: 32px">
   <div class="toolbar">
     <h2>Tweets</h2>
-    <div class="sort" role="group" aria-label="Sort tweets">
-      <button data-sort="rank" class="on">Top</button>
-      <button data-sort="time">Newest</button>
+    <div class="sec-tools" role="group" aria-label="Sort tweets">
+      <button type="button" data-sort="rank" aria-pressed="true">top</button>
+      <button type="button" data-sort="time" aria-pressed="false">newest</button>
     </div>
   </div>
-  <div class="list" id="list">
-    {% for t in items %}{{ card(t, tags_top=True) }}{% endfor %}
-  </div>
-  <div class="more-row" style="margin-top:16px"><button class="btn hidden" id="more">Show more</button></div>
+  <div class="list">{% for t in items %}{{ card(t) }}{% endfor %}</div>
+  <div class="more-row"><button type="button" class="more hidden">+ show more</button></div>
 </section>
 </main>
-{% endblock %}
-
-{% block script %}
-<script>
-(function () {
-  var PAGE = 30, shown = PAGE, list = document.getElementById("list"), more = document.getElementById("more");
-  var cards = Array.prototype.slice.call(list.children);
-  function paint() {
-    cards.forEach(function (c, i) { c.classList.toggle("hidden", i >= shown); });
-    more.classList.toggle("hidden", shown >= cards.length);
-    window.mbrReadMore && window.mbrReadMore(list);
-  }
-  function sort(key) {
-    cards.sort(function (a, b) {
-      if (key === "time") return a.dataset.time < b.dataset.time ? 1 : -1;
-      return (+b.dataset[key] - +a.dataset[key]) || (+b.dataset.likes - +a.dataset.likes);
-    });
-    cards.forEach(function (c) { list.appendChild(c); });
-    shown = PAGE; paint();
-  }
-  document.querySelectorAll(".sort button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      document.querySelectorAll(".sort button").forEach(function (x) { x.classList.toggle("on", x === b); });
-      sort(b.dataset.sort);
-    });
-  });
-  more.addEventListener("click", function () { shown += PAGE; paint(); });
-  paint();
-})();
-</script>
 {% endblock %}
