@@ -4,7 +4,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
-from . import config, llm, runlog
+from . import config, db, llm, runlog
 
 KINDS = ["argument", "opinion", "question", "news", "model_output", "joke", "off_topic"]
 SHOWN_KINDS = {"argument", "opinion"}
@@ -55,6 +55,8 @@ How much the tweet gives a reader to think with. High: clear reasoning, a well-m
 The author's own point in at most 15 words, e.g. "LLMs have no persistent memory, so there is no continuous subject to be conscious" or "We should treat models well since we can't rule out experience". Empty if the author makes no point.
 
 ## The tweet, with its context
+If the author continued THE TWEET in a thread, the rest of the thread follows it and is part of the same opinion: grade them together.
+
 {context}
 
 Images attached to the tweet (if any) follow."""
@@ -79,12 +81,15 @@ def context_for(con, report, replies=True) -> tuple[str, list[str]]:
     elif t["reply_to_username"]:
         parts.append(f"[in reply to @{t['reply_to_username']}, tweet unavailable]\n")
     parts.append(fmt_tweet(t, "THE TWEET"))
+    thread = [get(tid) for tid in json.loads(report["thread_ids"] or "[]")]
+    for x in thread:
+        parts.append(fmt_tweet(x, "the author's thread continues"))
     if quoted:
         parts.append(fmt_tweet(quoted, "tweet it quotes"))
     if replies:
         for rid in json.loads(report["reply_ids"] or "[]"):
             parts.append(fmt_tweet(get(rid), "reply"))
-    images = [m["url"] for src in (t, quoted) if src
+    images = [m["url"] for src in (t, quoted, *thread) if src
               for m in json.loads(src["media"] or "[]") if m["type"] == "photo"][:4]
     return "".join(parts), images
 
@@ -115,8 +120,8 @@ def classify(con, limit: int | None = None, workers: int = 12, ids: list[str] | 
                            ids).fetchall()
     else:
         rows = con.execute(
-            "SELECT * FROM reports WHERE is_report IS NULL AND hydrated=1 ORDER BY created_at DESC"
-            + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
+            f"SELECT * FROM reports WHERE is_report IS NULL AND hydrated=1 AND unit IN {db.UNITS} "
+            "ORDER BY created_at DESC" + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
     if not rows:
         return
     print(f"grading {len(rows)} candidates with {config.CLASSIFY_MODEL}", flush=True)

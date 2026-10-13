@@ -11,8 +11,8 @@ from . import collect, config, db, runlog
 def main():
     p = argparse.ArgumentParser(prog="aco")
     sub = p.add_subparsers(dest="cmd", required=True)
-    b = sub.add_parser("backfill", help="run the searches over the last N days of the archive")
-    b.add_argument("--days", type=int, default=60)
+    b = sub.add_parser("backfill", help="run the searches over every tweet since a date (default: START_DATE)")
+    b.add_argument("--since", help="YYYY-MM-DD; defaults to config.START_DATE")
     sub.add_parser("update", help="scheduled job: search new tweets, hydrate, grade, summarize, build")
     c = sub.add_parser("classify", help="hydrate and grade pending candidates")
     c.add_argument("--limit", type=int)
@@ -38,9 +38,11 @@ def main():
     logged = args.cmd not in ("build", "stats", "prune")
     try:
         if args.cmd == "backfill":
-            collect.backfill(con, args.days)
+            collect.backfill(con, args.since)
         elif args.cmd == "update":
             from . import build, classify, summarize, xmedia
+            if collect.needs_backfill(con):  # START_DATE moved earlier, or a fresh database
+                collect.backfill(con)
             collect.incremental(con)
             collect.hydrate(con)
             xmedia.attach_videos(con)
@@ -72,11 +74,11 @@ def main():
         elif args.cmd == "stats":
             for row in con.execute(
                     "SELECT COUNT(*) candidates, SUM(hydrated) hydrated, SUM(is_report IS NOT NULL) graded, "
-                    "SUM(is_report) opinions, SUM(is_report=1 AND score>=?) shown FROM reports", (config.MIN_SCORE,)):
+                    f"SUM(is_report) opinions, SUM({db.shown('')}) shown FROM reports", (config.MIN_SCORE,)):
                 print(dict(row))
             for row in con.execute(
                     "SELECT COALESCE(kind, '(ungraded)') kind, COALESCE(stance, '-') stance, COUNT(*) n, "
-                    "SUM(is_report=1 AND score>=?) shown FROM reports GROUP BY 1, 2 ORDER BY 3 DESC",
+                    f"SUM({db.shown('')}) shown FROM reports GROUP BY 1, 2 ORDER BY 3 DESC",
                     (config.MIN_SCORE,)):
                 print(f"  {row['kind']:<13} {row['stance']:<10} {row['n']:>6} {row['shown'] or 0:>6}")
 

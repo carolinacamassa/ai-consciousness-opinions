@@ -67,6 +67,15 @@
       {% if t.reply_to_username and (compact or not t.parent) %}<div class="replying">Replying to <a href="https://x.com/{{ t.reply_to_username }}" target="_blank" rel="noopener">@{{ t.reply_to_username }}</a></div>{% endif %}
       {{ text(t) }}
       {{ media(t) }}
+      {% if t.thread %}
+      {% if compact %}<div class="thread-note">Thread · {{ t.thread|length }} more {{ "tweet" if t.thread|length == 1 else "tweets" }}</div>
+      {% else %}
+      <details class="thread">
+        <summary>{{ t.thread|length }} more {{ "tweet" if t.thread|length == 1 else "tweets" }} in this thread</summary>
+        {% for x in t.thread %}<div class="thread-tweet">{{ text(x) }}{{ media(x) }}</div>{% endfor %}
+      </details>
+      {% endif %}
+      {% endif %}
       {% if t.quoted %}
       <div class="quote" data-href="{{ t.quoted.url }}">
         {{ head(t.quoted, stats=False, small_av=True) }}

@@ -35,8 +35,9 @@ def collect(con) -> dict:
     last_ok = next((r for r in runs if r["status"] == "ok" and r["command"] == "update"), None)
     tracking_since = q("SELECT MIN(ts) t FROM llm_calls")[0]["t"]
 
-    pipeline = q(f"""SELECT COUNT(*) candidates, SUM(hydrated=0) unhydrated, SUM(is_report IS NULL) ungraded,
-                     SUM(is_report=1 AND score>={config.MIN_SCORE}) shown FROM reports""")[0]
+    pipeline = q(f"""SELECT COUNT(*) candidates, SUM(hydrated=0) unhydrated,
+                     SUM(is_report IS NULL AND unit IN {db.UNITS}) ungraded,
+                     SUM({db.shown('')}) shown FROM reports""", config.MIN_SCORE)[0]
     return dict(
         now=now.isoformat(timespec="seconds"), table=table, peak=peak, purposes=purposes, runs=runs,
         last_ok=last_ok, tracking_since=tracking_since,

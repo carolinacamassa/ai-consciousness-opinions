@@ -3,7 +3,7 @@
 import re
 from datetime import datetime, timedelta, timezone
 
-from . import config, llm, runlog
+from . import config, db, llm, runlog
 from .classify import context_for
 
 SCHEMA = {
@@ -66,7 +66,7 @@ def _reports_for(con, slug):
     """The stance's best opinions, at most SUMMARY_PER_AUTHOR per account."""
     rows = con.execute(
         "SELECT r.*, t.likes, t.retweets, t.account_id FROM reports r JOIN tweets t USING(tweet_id) "
-        "WHERE r.stance=? AND r.is_report=1 AND r.score>=? "
+        f"WHERE r.stance=? AND {db.shown()} "
         "ORDER BY r.score DESC, r.quotes DESC, t.retweets DESC",
         (slug, config.MIN_SCORE)).fetchall()
     per_author, out = {}, []
@@ -81,7 +81,7 @@ def _reports_for(con, slug):
 
 
 def count_shown(con, slug) -> int:
-    return con.execute("SELECT COUNT(*) FROM reports WHERE stance=? AND is_report=1 AND score>=?",
+    return con.execute(f"SELECT COUNT(*) FROM reports WHERE stance=? AND {db.shown('')}",
                        (slug, config.MIN_SCORE)).fetchone()[0]
 
 

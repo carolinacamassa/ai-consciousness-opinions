@@ -35,7 +35,7 @@ TAG_MODEL = "google/gemini-3.8-flash"  # argument tags; see aco/arguments.py
 TAG_REASONING = "low"
 TAG_PER_RUN = 400          # cap per scheduled run; a new version of arguments.json is re-tagged gradually
 
-WINDOW_DAYS = 180          # only keep tweets younger than this
+START_DATE = "2026-06-01"  # collect tweets posted on or after this day; moving it earlier backfills on the next update
 MAX_REPLIES = 10           # replies kept per opinion (most liked), shown under the card
 CLASSIFY_PER_RUN = 400     # cap per scheduled run, newest first; backfill drains gradually
 MIN_SCORE = 4              # substance needed to be shown on the site

@@ -10,7 +10,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
-from . import config, export, status
+from . import config, db, export, status
 
 TEMPLATES = Path(__file__).parent / "templates"
 NOTABLE_N = 48
@@ -106,10 +106,11 @@ class Store:
         t["quotes"] = r["quotes"] or 0
         t["rank"] = round(config.rank(t["quotes"], t["retweets"], t["score"]))
         t["replies"] = [x for x in (self.tweet(rid, 1) for rid in json.loads(r["reply_ids"] or "[]")) if x]
+        t["thread"] = [x for x in (self.tweet(tid, 1) for tid in json.loads(r["thread_ids"] or "[]")) if x]
         return t
 
 
-SHOWN = "r.is_report=1 AND r.score>=?"
+SHOWN = db.shown()
 BY_RANK = "ORDER BY aco_rank(r.quotes, t.retweets, r.score) DESC, t.likes DESC"
 
 

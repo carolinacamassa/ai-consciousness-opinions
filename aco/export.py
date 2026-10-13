@@ -53,6 +53,9 @@ def report_md(i: int, t) -> str:
         out.append("\n")
     out.append(f"@{t['username']}: {_text(t)}\n")
     out.append(_media_line(t))
+    for x in t.get("thread") or []:
+        out.append(f"\n[thread continues] {_text(x)}\n")
+        out.append(_media_line(x))
     if t.get("quoted"):
         out.append("\n" + _quote_block("quoting", t["quoted"]))
     if t.get("replies"):

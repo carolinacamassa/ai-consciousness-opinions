@@ -71,7 +71,7 @@ def _chunks(ids, n=80):
 
 ENRICHED = ("tweet_id,account_id,username,account_display_name,created_at,full_text,"
             "retweet_count,favorite_count,reply_to_tweet_id,reply_to_username,"
-            "quoted_tweet_id,avatar_media_url")
+            "quoted_tweet_id,conversation_id,avatar_media_url")
 
 
 def _normalize(r: dict) -> dict:
@@ -81,7 +81,7 @@ def _normalize(r: dict) -> dict:
         created_at=r.get("created_at"), full_text=r.get("full_text"),
         likes=r.get("favorite_count") or 0, retweets=r.get("retweet_count") or 0,
         reply_to_tweet_id=r.get("reply_to_tweet_id"), reply_to_username=r.get("reply_to_username"),
-        quoted_tweet_id=r.get("quoted_tweet_id"),
+        quoted_tweet_id=r.get("quoted_tweet_id"), conversation_id=r.get("conversation_id"),
     )
 
 
@@ -117,6 +117,56 @@ def fetch_top_replies(ids, per_tweet: int) -> dict[str, list[dict]]:
             bucket = out.setdefault(r["reply_to_tweet_id"], [])
             if len(bucket) < per_tweet:
                 bucket.append(_normalize(r))
+    flat = {t["tweet_id"]: t for ts in out.values() for t in ts}
+    _attach_media_urls(flat)
+    return out
+
+
+def authors(ids) -> dict[str, str]:
+    """account_id of each tweet id; tweets missing from the archive are absent."""
+    out = {}
+    for chunk in _chunks(set(ids)):
+        for r in get("tweets", [("select", "tweet_id,account_id"), ("tweet_id", _in(chunk))]):
+            if r["account_id"]:
+                out[r["tweet_id"]] = r["account_id"]
+    return out
+
+
+def conversations(ids) -> dict[str, str]:
+    """conversation_id (the id of the conversation's first tweet) of each tweet id."""
+    out = {}
+    for chunk in _chunks(set(ids)):
+        for r in get("enriched_tweets", [("select", "tweet_id,conversation_id"), ("tweet_id", _in(chunk))]):
+            if r["conversation_id"]:
+                out[r["tweet_id"]] = r["conversation_id"]
+    return out
+
+
+def fetch_threads(roots: dict[str, str]) -> dict[str, list[dict]]:
+    """For each root tweet id (mapped to its author), the author's own continuation of it:
+    their tweets in that conversation that reply to the root or to an earlier continuation,
+    oldest first. Their replies to other people in the same conversation are left out."""
+    out: dict[str, list[dict]] = {}
+    for chunk in _chunks(roots, 20):
+        rows = []
+        offset = 0
+        while True:
+            page = get("enriched_tweets", [("select", ENRICHED), ("conversation_id", _in(chunk)),
+                                           ("account_id", _in({roots[c] for c in chunk})),
+                                           ("order", "created_at.asc,tweet_id.asc"), ("limit", str(PAGE)),
+                                           ("offset", str(offset))])
+            rows += page
+            if len(page) < PAGE:
+                break
+            offset += PAGE
+        for root in chunk:
+            kept, thread = {root}, []
+            for r in rows:
+                if (r["conversation_id"] == root and r["account_id"] == roots[root]
+                        and r["tweet_id"] != root and r["reply_to_tweet_id"] in kept):
+                    kept.add(r["tweet_id"])
+                    thread.append(_normalize(r))
+            out[root] = thread
     flat = {t["tweet_id"]: t for ts in out.values() for t in ts}
     _attach_media_urls(flat)
     return out

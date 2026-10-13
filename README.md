@@ -16,8 +16,12 @@ cap on summaries are new.
 
 1. **Searches** the archive's full-text index for tweets inserted or updated since the last run, using the terms in
    `aco/config.py` (`SEARCHES`): conscious, sentient, qualia, model welfare, moral patient, AI rights and a few more.
-2. **Hydrates** each match with its parent tweet, quoted tweet, top 10 replies and media, and looks up playable
-   video URLs and missing avatars from X's public embed endpoint (`aco/xmedia.py`).
+   Only original tweets and quote tweets become opinions. Replies to other people are dropped as soon as they are
+   found and never fetched, graded or counted. A tweet that continues its author's own thread stands for the thread:
+   the thread's first tweet becomes the candidate, and the whole thread is one opinion.
+2. **Hydrates** each candidate with its quoted tweet, the author's thread under it, its top 10 replies (shown for
+   context only) and media, and looks up playable video URLs and missing avatars from X's public embed endpoint
+   (`aco/xmedia.py`).
 3. **Grades** each match with Gemini 3.8 Flash (text and attached images, `aco/classify.py`): is it a human opinion
    on AI consciousness or moral status, which stance it takes, what kind of tweet it is (argument, opinion,
    question, news, model output, joke, off topic), how much substance it has (1-10), and the author's point in a
@@ -40,7 +44,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). All LLM calls go thr
 ```bash
 uv sync
 export OPENROUTER_API_KEY=...
-uv run aco backfill --days 60    # run the searches over the last 60 days (free, a few minutes)
+uv run aco backfill               # run the searches over every tweet since START_DATE (free, ~15 minutes)
 uv run aco classify              # hydrate and grade the matches
 uv run aco quotes && uv run aco videos
 uv run aco summarize
@@ -52,8 +56,9 @@ uv run aco stats
 To serve the site under a path rather than a domain root (a GitHub Pages project site, for example), set
 `ACO_BASE=/ai-consciousness-opinions/` before `build`. `ACO_SITE_URL` sets the absolute URL used in `llms.txt`.
 
-Data lives in `data/aco.sqlite`, which is not committed. The stance names and definitions, the searches, the score
-threshold and the ranking weights are at the top of `aco/config.py`.
+Data lives in `data/aco.sqlite`, which is not committed. The start date (`START_DATE`, June 1, 2026), the stance
+names and definitions, the searches, the score threshold and the ranking weights are at the top of `aco/config.py`.
+Moving `START_DATE` earlier makes the next `aco update` search the extra days.
 
 ## Hosting on GitHub Pages
 
@@ -69,8 +74,8 @@ One-time setup:
 2. Settings > Pages > Build and deployment > Source: **GitHub Actions**.
 3. Settings > Secrets and variables > Actions > New repository secret: `OPENROUTER_API_KEY`. A dedicated OpenRouter
    key with a credit limit is safest.
-4. If there is no `data` branch yet, run the workflow once from the Actions tab with `backfill_days` set (60 days
-   cost about $8 to grade).
+4. If there is no `data` branch yet, run the workflow once from the Actions tab with `fresh_start` ticked. It
+   searches from `START_DATE` and grades the backlog 400 candidates per run.
 
 The `data` branch is as public as the repository. Before saving, each run deletes the tweets the site neither shows
 nor uses as context (`aco prune`), keeping only their grades so they aren't graded again.

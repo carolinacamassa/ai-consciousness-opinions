@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import config, llm, runlog
+from . import config, db, llm, runlog
 from .classify import context_for
 
 TAXONOMY_PATH = Path(__file__).parent / "arguments.json"
@@ -68,7 +68,7 @@ def tag_one(text: str, images: list[str], model: str = None, reasoning: str | No
 def tag(con, limit: int | None = None, workers: int = 8):
     """Tag shown opinions that have no tags yet, or tags from an older version of the list."""
     rows = con.execute(
-        "SELECT * FROM reports WHERE is_report=1 AND score>=? AND (arguments_version IS NULL OR arguments_version!=?) "
+        f"SELECT * FROM reports WHERE {db.shown('')} AND (arguments_version IS NULL OR arguments_version!=?) "
         "ORDER BY created_at DESC" + (f" LIMIT {int(limit)}" if limit else ""),
         (config.MIN_SCORE, VERSION)).fetchall()
     if not rows:

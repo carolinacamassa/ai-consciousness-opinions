@@ -111,6 +111,13 @@ a.chip:hover { background: color-mix(in srgb, var(--c) 22%, transparent); }
 .gist { font-style: italic; font-family: var(--display); font-size: 14.5px; color: var(--text-2); }
 .xlink { margin-left: auto; color: var(--muted); white-space: nowrap; }
 .xlink:hover { color: var(--text); }
+.thread { margin-top: 10px; }
+.thread summary { cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
+.thread summary::-webkit-details-marker { display: none; }
+.thread summary::before { content: "▸ "; }
+.thread[open] summary::before { content: "▾ "; }
+.thread-tweet { border-left: 2px solid var(--line); padding: 2px 0 2px 12px; margin-top: 10px; }
+.thread-note { font-size: 13px; color: var(--muted); margin-top: 6px; }
 .replies { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
 .replies summary { cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
 .replies summary::-webkit-details-marker { display: none; }
