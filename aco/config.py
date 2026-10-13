@@ -14,6 +14,7 @@ SITE_URL = os.environ.get("ACO_SITE_URL", "")  # absolute URL used in llms.txt; 
 _base = os.environ.get("ACO_BASE", "").strip("/")
 BASE = f"/{_base}/" if _base else "/"
 GITHUB_URL = "https://github.com/carolinacamassa/ai-consciousness-opinions"
+AUTHOR_URL = "https://cleo.codes"
 UPSTREAM_URL = "https://github.com/aVariengien/model-behavior-reports"
 UMAMI_SCRIPT = os.environ.get("ACO_UMAMI_SCRIPT", "")
 UMAMI_WEBSITE_ID = os.environ.get("ACO_UMAMI_ID", "")

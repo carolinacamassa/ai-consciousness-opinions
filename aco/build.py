@@ -220,6 +220,7 @@ def build(con, out_dir: Path = config.OUT_DIR):
     common = dict(site_name=config.SITE_NAME, base=config.BASE, umami_script=config.UMAMI_SCRIPT,
                   umami_id=config.UMAMI_WEBSITE_ID, built_at=now.isoformat(timespec="seconds"),
                   n_reports=sum(counts.values()), n_people=len(people), github=config.GITHUB_URL,
+                  author_url=config.AUTHOR_URL,
                   upstream=config.UPSTREAM_URL, classifier=config.CLASSIFY_MODEL_NAME,
                   summarizer=config.SUMMARY_MODEL_NAME, min_score=config.MIN_SCORE, stances=stances,
                   rank_quote=config.RANK_QUOTE, rank_rt=config.RANK_RT, rank_cap=config.RANK_RT_CAP,
