@@ -22,6 +22,7 @@ def main():
     sub.add_parser("quotes", help="refresh quote counts")
     sub.add_parser("videos", help="look up playable video URLs and missing avatars")
     sub.add_parser("stats")
+    sub.add_parser("prune", help="delete stored tweets the site doesn't show or use as context")
     args = p.parse_args()
 
     # One run at a time: a scheduled run must not overlap a long backfill.
@@ -34,7 +35,7 @@ def main():
             sys.exit("another aco run is in progress")
 
     started = datetime.now(timezone.utc)
-    logged = args.cmd not in ("build", "stats")
+    logged = args.cmd not in ("build", "stats", "prune")
     try:
         if args.cmd == "backfill":
             collect.backfill(con, args.days)
@@ -66,6 +67,8 @@ def main():
         elif args.cmd == "build":
             from . import build
             build.build(con)
+        elif args.cmd == "prune":
+            print(f"prune: deleted {db.prune(con, config.MIN_SCORE)} tweets the site doesn't use")
         elif args.cmd == "stats":
             for row in con.execute(
                     "SELECT COUNT(*) candidates, SUM(hydrated) hydrated, SUM(is_report IS NOT NULL) graded, "

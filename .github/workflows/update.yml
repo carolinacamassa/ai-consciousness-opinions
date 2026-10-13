@@ -78,6 +78,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The data branch is public: keep only the tweets the site shows or uses as context.
+          uv run aco prune
           uv run python -c "import sqlite3; c = sqlite3.connect('data/aco.sqlite'); c.execute('PRAGMA wal_checkpoint(TRUNCATE)'); c.execute('PRAGMA journal_mode=DELETE'); c.close()"
           tmp=$(mktemp -d)
           gzip -9 -c data/aco.sqlite > "$tmp/aco.sqlite.gz"

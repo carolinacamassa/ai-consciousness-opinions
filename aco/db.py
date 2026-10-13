@@ -82,6 +82,26 @@ def set_state(con, key, value):
     con.commit()
 
 
+def prune(con, min_score: int) -> int:
+    """Delete stored tweets the site neither shows nor uses as context, and the gists of
+    graded tweets it doesn't show. Their rows in `reports` keep the grades, so they are never
+    graded again (set hydrated=0 on one to fetch its tweet back). Returns tweets deleted."""
+    keep = set()
+    for r in con.execute("SELECT r.tweet_id, r.reply_ids, t.reply_to_tweet_id, t.quoted_tweet_id "
+                         "FROM reports r LEFT JOIN tweets t USING(tweet_id) "
+                         "WHERE r.is_report IS NULL OR (r.is_report=1 AND r.score>=?)", (min_score,)):
+        keep.update(x for x in (r["tweet_id"], r["reply_to_tweet_id"], r["quoted_tweet_id"]) if x)
+        keep.update(json.loads(r["reply_ids"] or "[]"))
+    con.execute("CREATE TEMP TABLE keep(tweet_id TEXT PRIMARY KEY)")
+    con.executemany("INSERT OR IGNORE INTO keep VALUES (?)", [(k,) for k in keep])
+    deleted = con.execute("DELETE FROM tweets WHERE tweet_id NOT IN (SELECT tweet_id FROM keep)").rowcount
+    con.execute("UPDATE reports SET claim='' WHERE is_report=0 OR (is_report=1 AND score<?)", (min_score,))
+    con.execute("DROP TABLE keep")
+    con.commit()
+    con.execute("VACUUM")
+    return deleted
+
+
 TWEET_COLS = ["tweet_id", "account_id", "username", "display_name", "avatar", "created_at",
               "full_text", "likes", "retweets", "reply_to_tweet_id", "reply_to_username",
               "quoted_tweet_id", "media", "urls"]

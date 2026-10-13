@@ -72,8 +72,8 @@ One-time setup:
 4. If there is no `data` branch yet, run the workflow once from the Actions tab with `backfill_days` set (60 days
    cost about $8 to grade).
 
-The `data` branch is as public as the repository, and the database in it holds the archive tweets the site
-collected, including the ones it doesn't show.
+The `data` branch is as public as the repository. Before saving, each run deletes the tweets the site neither shows
+nor uses as context (`aco prune`), keeping only their grades so they aren't graded again.
 
 ## Data and credits
 
