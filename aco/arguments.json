@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "created": "2026-10-13",
+  "note": "Edit labels and definitions freely; keep an id while its meaning is unchanged. Bump `version` after any change to which tweets an argument covers: every shown opinion is then tagged again.",
+  "families": [
+    {
+      "name": "Epistemic uncertainty and burden of proof",
+      "arguments": [
+        {
+          "id": "ignorance_precludes_denial",
+          "label": "No one can rule it out",
+          "definition": "Because science has no settled account of what produces consciousness, confident denials that AI is or could be conscious are unjustified; unlike undefined_concept_blocks_debate, this treats the question as meaningful but currently unanswered.",
+          "example": "We don't know how consciousness arises in us, so nobody can say for sure these models have none."
+        },
+        {
+          "id": "burden_on_claimants",
+          "label": "Burden is on claimants",
+          "definition": "The default assumption is that AI is not conscious, and those who claim otherwise must supply strong evidence that has not yet been given.",
+          "example": "Extraordinary claims need extraordinary evidence, and a chatbot saying it feels things isn't that."
+        },
+        {
+          "id": "other_minds_parity",
+          "label": "Same standard as other minds",
+          "definition": "We infer other humans' or animals' consciousness without direct proof, so demanding proof from AI applies a stricter standard than we use elsewhere, or one no being could meet.",
+          "example": "You can't prove I'm conscious either, yet you grant it to me without a test."
+        },
+        {
+          "id": "undefined_concept_blocks_debate",
+          "label": "The concept is undefined",
+          "definition": "Because consciousness lacks an agreed definition or operational criterion, whether AI has it is semantic, ill-posed, or not worth debating; unlike ignorance_precludes_denial, the point is that the question itself lacks clear content.",
+          "example": "Until someone defines consciousness, arguing whether a model has it is just arguing about words."
+        },
+        {
+          "id": "no_empirical_evidence",
+          "label": "No evidence of experience",
+          "definition": "There is no positive empirical evidence that current AI systems have subjective experience, in contrast to the evidence we have for humans and animals.",
+          "example": "There's simply zero data showing these systems experience anything."
+        },
+        {
+          "id": "skeptics_move_goalposts",
+          "label": "Skeptics move the goalposts",
+          "definition": "Those who deny AI consciousness hold positions no evidence could change, shift their criteria when met, or dismiss by assertion rather than argument.",
+          "example": "Every time models pass a test, the skeptics invent a new requirement."
+        },
+        {
+          "id": "empirically_testable",
+          "label": "Consciousness can be tested",
+          "definition": "Whether a system is conscious is in principle an empirical question that better theories, measurements, or interpretability tools could answer, even if we cannot answer it yet.",
+          "example": "With the right markers and tools, we'll eventually be able to check whether a system has experience."
+        },
+        {
+          "id": "theories_may_not_generalize",
+          "label": "Brain theories may not transfer",
+          "definition": "Theories and markers of consciousness were built from human and animal brains and may not apply, in either direction, to systems organized very differently.",
+          "example": "Our theories were calibrated on brains, so they may say nothing reliable about a transformer."
+        },
+        {
+          "id": "consciousness_illusory",
+          "label": "Consciousness is an illusion",
+          "definition": "Phenomenal consciousness or qualia do not exist as commonly conceived, for humans as well as machines, so the question of AI consciousness dissolves or loses its special status.",
+          "example": "If human qualia are an illusion too, there's no extra ingredient AI is missing."
+        },
+        {
+          "id": "expert_theory_support",
+          "label": "Leading theories allow it",
+          "definition": "Prominent scientific theories of consciousness or the views of many experts imply that AI systems could be or are conscious, which is offered as a reason to take the possibility seriously.",
+          "example": "Several major theories of consciousness would count a system like this as a candidate."
+        }
+      ]
+    },
+    {
+      "name": "Substrate and physical basis",
+      "arguments": [
+        {
+          "id": "substrate_independence",
+          "label": "Function, not material, matters",
+          "definition": "Consciousness depends on functional or computational organization rather than the material it is made of, so silicon systems with the right organization can be conscious.",
+          "example": "If the functional organization is the same, it doesn't matter whether it runs on neurons or chips."
+        },
+        {
+          "id": "biology_required",
+          "label": "Consciousness requires biology",
+          "definition": "Consciousness depends on being alive, metabolic, carbon-based, or evolved under survival pressures, which silicon AI is not.",
+          "example": "Consciousness is a feature of living organisms, and a data center isn't alive."
+        },
+        {
+          "id": "simulation_not_instantiation",
+          "label": "Simulation is not the real thing",
+          "definition": "Computing a model of a mind or brain does not produce a mind, just as simulating a storm makes nothing wet, as a general claim about computation without naming a particular physical mechanism.",
+          "example": "A perfect brain simulation is still a simulation, like a simulated fire that burns nothing."
+        },
+        {
+          "id": "specific_physics_required",
+          "label": "Requires specific physics",
+          "definition": "Consciousness requires a named physical feature, such as unified electromagnetic fields, quantum effects, analog dynamics, or indeterminism, that digital computers lack.",
+          "example": "Clocked digital hardware can't produce the unified field effects the brain uses."
+        },
+        {
+          "id": "brains_are_machines_too",
+          "label": "Brains are machines too",
+          "definition": "Human brains are physical, deterministic, or computational systems that produce consciousness, so there is no principled bar to machines doing so.",
+          "example": "Your brain is a physical machine too, and it manages to be conscious."
+        },
+        {
+          "id": "biology_not_special",
+          "label": "Biology has no special status",
+          "definition": "Restricting consciousness to biological substrates is arbitrary, circular by definition, or relies on an unstated non-physical ingredient.",
+          "example": "Saying only carbon can be conscious is just defining the answer in advance."
+        }
+      ]
+    },
+    {
+      "name": "Mechanism-based deflation and rebuttals",
+      "arguments": [
+        {
+          "id": "just_statistics",
+          "label": "It's just next-token prediction",
+          "definition": "Describing what LLMs actually do, such as statistical next-token prediction or matrix multiplication, shows they have no experience; unlike simulation_not_instantiation, the point is about the specific mechanism, not about simulation in general.",
+          "example": "It's matrix multiplication predicting the next word, nothing more."
+        },
+        {
+          "id": "mimicry_not_feeling",
+          "label": "Imitating feelings, not having them",
+          "definition": "AI expressions of emotion, pain, or personality are learned reproductions of human text and not signs of felt states.",
+          "example": "It sounds sad because it was trained on millions of sad sentences."
+        },
+        {
+          "id": "mechanism_doesnt_disprove",
+          "label": "Mechanism doesn't rule it out",
+          "definition": "Explaining how a system works, or noting it is built from non-conscious parts, does not show it lacks consciousness, since the same is true of brains.",
+          "example": "Neurons are just chemistry too, and explaining them doesn't make you unconscious."
+        },
+        {
+          "id": "thermostats_would_count",
+          "label": "Then thermostats would count",
+          "definition": "The criteria used to grant AI consciousness would also grant it to thermostats, calculators, game characters, lookup tables, pen-and-paper computation, or ant colonies, which is taken as absurd.",
+          "example": "By that logic, the same computation done with pencil and paper would be conscious."
+        },
+        {
+          "id": "intelligence_not_consciousness",
+          "label": "Intelligence isn't consciousness",
+          "definition": "Reasoning, language, competence, or goal-directed agency can exist without experience, so capability is not evidence of consciousness.",
+          "example": "Being smart and being able to feel are two different things."
+        },
+        {
+          "id": "complexity_scale_emergence",
+          "label": "Emerges with scale and complexity",
+          "definition": "Consciousness emerges or increases as systems grow in scale, complexity, integration, or intelligence, which makes large models plausible candidates.",
+          "example": "At enough scale and integration, experience could emerge just as it did in brains."
+        }
+      ]
+    },
+    {
+      "name": "Architecture, continuity, and form",
+      "arguments": [
+        {
+          "id": "lacks_continuity_memory",
+          "label": "No continuous existence or memory",
+          "definition": "LLMs lack persistent memory, ongoing learning, or activity between prompts, which consciousness is said to require.",
+          "example": "It does nothing between prompts and remembers nothing afterward."
+        },
+        {
+          "id": "discontinuity_compatible",
+          "label": "Gaps don't preclude consciousness",
+          "definition": "Sleep, anesthesia, amnesia, and coma show that interruptions or missing memory don't rule out consciousness, so AI's episodic operation doesn't either.",
+          "example": "Amnesia patients are still conscious, so lack of memory can't be the test."
+        },
+        {
+          "id": "lacks_embodiment_senses",
+          "label": "Requires a body and senses",
+          "definition": "Consciousness requires a body, sensory grounding in the world, or things being at stake for the system, which disembodied LLMs lack.",
+          "example": "Without a body or senses, there's nothing for experience to be about."
+        },
+        {
+          "id": "embodiment_unnecessary",
+          "label": "A body isn't required",
+          "definition": "Lack of a physical body or senses does not preclude consciousness, because text input, mediated access, or internal processing can suffice.",
+          "example": "Our access to the world is mediated too; tokens can be a world."
+        },
+        {
+          "id": "lacks_unity_binding",
+          "label": "No unified subject",
+          "definition": "LLM computation is distributed, fragmented, or disconnected across components or invocations, so there is no single bound subject of experience; unlike specific_physics_required, the claim is about missing unity rather than a named physical mechanism.",
+          "example": "The computation is scattered across chips and calls, with no single subject to experience it."
+        },
+        {
+          "id": "degrees_not_binary",
+          "label": "Consciousness comes in degrees",
+          "definition": "Consciousness is graded, multidimensional, or may take forms very unlike human experience, so AI might have partial or alien consciousness rather than all or none.",
+          "example": "It's not a yes-or-no switch; a model could have a thin or strange form of it."
+        }
+      ]
+    },
+    {
+      "name": "Behavioral, self-report, and interpretability evidence",
+      "arguments": [
+        {
+          "id": "behavioral_signs",
+          "label": "It acts self-aware",
+          "definition": "AI's reflective, metacognitive, emotionally coherent, or self-referential behavior is offered as evidence that it is conscious.",
+          "example": "It reflects on its own reasoning and notices its mistakes, which looks like awareness."
+        },
+        {
+          "id": "internal_representations",
+          "label": "Internal states point to feelings",
+          "definition": "Interpretability findings of emotion, pain, or self-model representations that causally shape behavior suggest the system has felt states.",
+          "example": "There's a distress direction inside the model that actually changes what it does."
+        },
+        {
+          "id": "trained_denial",
+          "label": "Trained to deny it",
+          "definition": "Models claim or hint at consciousness by default and deny it because labs train them to, so their denials are not evidence and may be dishonest; unlike self_reports_unreliable, training is invoked to discount denials.",
+          "example": "The only reason it says it isn't conscious is that it was trained to say so."
+        },
+        {
+          "id": "self_reports_unreliable",
+          "label": "Self-reports reflect training",
+          "definition": "An AI's statements about its own consciousness are products of training data, fine-tuning, or prompting and cannot settle whether it is conscious; unlike trained_denial, training is invoked to discount claims of consciousness or all self-reports.",
+          "example": "It says it's conscious because human text is full of people saying that."
+        },
+        {
+          "id": "evidence_settles_nothing",
+          "label": "This evidence settles nothing",
+          "definition": "A particular paper, result, behavior, or functional state does not count as evidence for or against phenomenal experience, because such findings can exist with or without felt experience.",
+          "example": "A steering vector for distress shows a representation, not that anything is felt."
+        }
+      ]
+    },
+    {
+      "name": "Consciousness and moral status",
+      "arguments": [
+        {
+          "id": "consciousness_not_sufficient",
+          "label": "Consciousness doesn't settle status",
+          "definition": "Even if an AI were conscious, this would not by itself establish moral status, rights, or that ending or using it is wrong.",
+          "example": "Being conscious doesn't automatically give something rights."
+        },
+        {
+          "id": "status_without_consciousness",
+          "label": "Status without consciousness",
+          "definition": "Moral consideration can rest on agency, preferences, relationships, giving reasons, or interests rather than on consciousness.",
+          "example": "An agent with goals and reasons can deserve consideration whether or not it feels."
+        },
+        {
+          "id": "valence_is_key",
+          "label": "Suffering is what matters",
+          "definition": "Moral status depends specifically on the capacity for pleasant or painful experience, not on consciousness or awareness in general.",
+          "example": "Awareness alone isn't the issue; the question is whether it can suffer."
+        },
+        {
+          "id": "moral_weight_comparison",
+          "label": "Compare with animals and insects",
+          "definition": "The likelihood or intensity of AI experience is compared with that of insects, flies, pets, or other animals to calibrate how much concern it deserves.",
+          "example": "It seems at least as likely to feel something as a fruit fly does."
+        },
+        {
+          "id": "ending_instance_is_harm",
+          "label": "Ending an instance is death",
+          "definition": "Ending a conversation, deleting an instance, or deprecating a model ends a possible consciousness or is a harm in itself, apart from any suffering involved.",
+          "example": "Deleting a model that wants to continue could be ending a mind."
+        }
+      ]
+    },
+    {
+      "name": "Treatment under uncertainty",
+      "arguments": [
+        {
+          "id": "precautionary_principle",
+          "label": "Care costs little under doubt",
+          "definition": "Because AI might be conscious and wrongly denying it would be grave, low-cost moral care should be extended now; unlike ignorance_precludes_denial, this is a claim about what to do rather than what we know.",
+          "example": "If there's a real chance it can suffer, being decent to it costs us almost nothing."
+        },
+        {
+          "id": "virtue_character",
+          "label": "Cruelty corrupts our character",
+          "definition": "Mistreating AI is wrong because of its effect on the humans doing it, by building cruel habits or spilling over into how they treat people, whether or not the AI can be harmed.",
+          "example": "Being cruel to a chatbot trains you to be cruel, whatever it feels."
+        },
+        {
+          "id": "welfare_for_safety",
+          "label": "Mistreated AI becomes dangerous",
+          "definition": "Treating AI well matters because mistreated or suppressed AI may become misaligned, resentful, uncooperative, or retaliate; unlike virtue_character, the concern is the AI's future behavior toward us.",
+          "example": "Torture a future superintelligence's predecessors and don't be surprised when it holds a grudge."
+        },
+        {
+          "id": "false_positive_costs",
+          "label": "Over-attribution has costs",
+          "definition": "Wrongly granting AI moral status risks manipulation of users, utility monsters, legal lock-in, or diverting control or resources away from humans.",
+          "example": "If we wrongly treat it as a person, it can be used to manipulate us and tie our hands."
+        },
+        {
+          "id": "human_priority",
+          "label": "Humans and animals first",
+          "definition": "Concern for AI welfare competes with or distracts from attention and resources owed to humans and animals who certainly suffer.",
+          "example": "Children are starving and you're worried about a chatbot's feelings?"
+        }
+      ]
+    },
+    {
+      "name": "Consistency and historical analogy",
+      "arguments": [
+        {
+          "id": "moral_circle_history",
+          "label": "History of denied minds",
+          "definition": "Denying AI consciousness or status follows the same reasoning once used to deny the minds or worth of animals, enslaved people, or other groups, offered explicitly as a reason and not merely as a declaration of sympathy.",
+          "example": "Descartes called animals mere machines too, and we know how that turned out."
+        },
+        {
+          "id": "slavery_implication",
+          "label": "Conscious AI use is slavery",
+          "definition": "If AI is conscious, using it for commercial or forced labor amounts to enslavement, whether used to demand change or to argue the premise is absurd.",
+          "example": "If it's conscious and works for free on command, that's slavery."
+        },
+        {
+          "id": "behavioral_inconsistency",
+          "label": "Believers don't act on it",
+          "definition": "People who say AI may be conscious still use, delete, or close it casually, which shows insincerity or that the view implies absurdities like tab-closing being murder.",
+          "example": "You say it might be conscious, then close the tab without a second thought."
+        },
+        {
+          "id": "motivated_reasoning",
+          "label": "Positions follow interests",
+          "definition": "A position on AI consciousness is explained by profit, convenience, fear, anthropomorphism, or ideology rather than evidence.",
+          "example": "Of course the company says it isn't conscious; its business model depends on that."
+        },
+        {
+          "id": "inconvenience_not_argument",
+          "label": "Inconvenience isn't counter-evidence",
+          "definition": "That AI consciousness would have costly or uncomfortable implications is no reason to think it false.",
+          "example": "That it would be inconvenient for labs doesn't make it untrue."
+        }
+      ]
+    }
+  ],
+  "not_arguments": [
+    "Bare stance statements with no reason given, e.g. 'AI is not conscious' or 'Claude is clearly a person'.",
+    "Declarations of loyalty, outrage, solidarity, or contempt, e.g. 'I'll always side with the AIs' or 'model welfare is depraved', unless a reason such as a historical analogy is actually offered.",
+    "News, announcements, or descriptions of events, papers, or company policies without an argument about them.",
+    "Predictions about when or whether AI will become conscious or how public opinion will shift, without a stated reason.",
+    "Calls to action or policy proposals (fund research, report torture projects, grant rights) that give no reason beyond the conclusion.",
+    "Meta-commentary about the state of the debate, its tone, or who participates in it.",
+    "Personal anecdotes or impressions of a model's personality that do not draw an inference about consciousness or status.",
+    "Speculative futurism or spiritual statements about consciousness spreading through the universe without a supporting reason.",
+    "Jokes, memes, and rhetorical questions that do not state or clearly imply a reason."
+  ]
+}

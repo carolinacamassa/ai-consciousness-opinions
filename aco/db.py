@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS reports (
     claim TEXT,                -- the author's point in a few words
     classified_at TEXT,
     quotes INTEGER DEFAULT 0,
-    quotes_at TEXT
+    quotes_at TEXT,
+    arguments TEXT,            -- ids from arguments.json the opinion makes (JSON list); shown opinions only
+    arguments_version INTEGER, -- version of arguments.json they were tagged with
+    tagged_at TEXT
 );
 CREATE INDEX IF NOT EXISTS reports_created ON reports(created_at);
 
@@ -69,6 +72,11 @@ def connect() -> sqlite3.Connection:
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
     con.executescript(SCHEMA)
+    cols = {r["name"] for r in con.execute("PRAGMA table_info(reports)")}
+    for col, kind in (("arguments", "TEXT"), ("arguments_version", "INTEGER"), ("tagged_at", "TEXT")):
+        if col not in cols:  # databases saved before argument tagging existed
+            con.execute(f"ALTER TABLE reports ADD COLUMN {col} {kind}")
+    con.commit()
     return con
 
 

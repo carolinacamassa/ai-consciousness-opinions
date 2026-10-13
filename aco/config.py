@@ -31,6 +31,9 @@ SUMMARY_MODEL = "anthropic/claude-opus-5.5"
 CLASSIFY_MODEL_NAME = "Gemini 3.8 Flash"
 CLASSIFY_REASONING = "low"
 SUMMARY_MODEL_NAME = "Claude Opus 5.5"
+TAG_MODEL = "google/gemini-3.8-flash"  # argument tags; see aco/arguments.py
+TAG_REASONING = "low"
+TAG_PER_RUN = 400          # cap per scheduled run; a new version of arguments.json is re-tagged gradually
 
 WINDOW_DAYS = 180          # only keep tweets younger than this
 MAX_REPLIES = 10           # replies kept per opinion (most liked), shown under the card
