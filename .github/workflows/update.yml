@@ -23,19 +23,33 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: write  # to save the database on the data branch
+      pages: read      # to read the custom domain, if one is set
     env:
       FRESH_START: ${{ inputs.fresh_start || false }}
-      ACO_SITE_URL: https://${{ github.repository_owner }}.github.io
     steps:
       - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v7
 
+      - name: Find the site's address
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # With a custom domain (Settings > Pages) the site is served from the domain's root;
+          # without one, from https://<owner>.github.io/<repo>/. The build needs to know for its links.
+          domain=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.cname // ""')
+          if [ -n "$domain" ]; then
+            echo "ACO_SITE_URL=https://$domain" >> "$GITHUB_ENV"
+            echo "ACO_BASE=/" >> "$GITHUB_ENV"
+          else
+            echo "ACO_SITE_URL=https://${GITHUB_REPOSITORY_OWNER}.github.io" >> "$GITHUB_ENV"
+            echo "ACO_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
+          fi
+          echo "Building for ${domain:-${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/}"
+
       - name: Restore database
         id: restore
         run: |
-          # A project site is served under /<repo>/; the build needs to know for its links.
-          echo "ACO_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
           mkdir -p data
           set +e; git ls-remote --exit-code --heads origin data > /dev/null; found=$?; set -e
           if [ "$found" -eq 0 ]; then
