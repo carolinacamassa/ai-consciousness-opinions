@@ -69,7 +69,9 @@ Moving `START_DATE` earlier makes the next `aco update` search the extra days.
 No server is needed. `.github/workflows/update.yml` runs every 3 hours, and on demand from the Actions tab. It
 restores the database from the `data` branch, runs `aco update`, saves the database back to `data` (one gzipped
 file that each run overwrites, so the branch's history doesn't grow), and publishes `dist/` to GitHub Pages at
-`https://<owner>.github.io/<repo>/`. If it can't restore the database it stops instead of publishing an empty site.
+`https://<owner>.github.io/<repo>/`, or at the root of the custom domain set under Settings > Pages (the workflow
+reads it from there, so the site's links follow it). If it can't restore the database it stops instead of publishing
+an empty site.
 
 One-time setup:
 
