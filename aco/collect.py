@@ -12,6 +12,8 @@ from . import archive, config, db, runlog
 
 SCAN_SELECT = ("tweet_id,account_id,created_at,updated_at,full_text,favorite_count,retweet_count,"
                "reply_to_tweet_id")
+SEARCH_HOURS = 3                # incremental searches cover this many hours of archive updates at a time
+MIN_WINDOW = timedelta(minutes=10)  # smallest window a timed-out search is split down to
 GRADE_COLS = ("is_report", "kind", "stance", "score", "claim", "classified_at", "arguments", "arguments_version",
               "tagged_at")
 
@@ -108,31 +110,51 @@ def ingest(con, rows: list[dict], label: str) -> int:
     return new
 
 
-def _windows(since: str, days: int | None):
-    """[since, now) as (start, end) pairs of `days` days, newest first; one open window if days is None."""
-    if days is None:
-        return [(since, None)]
-    start, now, out = datetime.fromisoformat(since[:10]).replace(tzinfo=timezone.utc), _now(), []
+def _windows(since: str, span: timedelta) -> list[tuple[str, str]]:
+    """[since, now) as consecutive (start, end) windows of `span`, oldest first."""
+    start, now, out = datetime.fromisoformat(since), _now(), []
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
     while start < now:
-        end = min(start + timedelta(days=days), now)
+        end = min(start + span, now)
         out.append((_iso(start), _iso(end)))
         start = end
-    return out[::-1]
+    return out
 
 
-def _search_all(con, column: str, since: str, verb: str, window_days: int | None = None) -> int:
-    """Run every search over `column` >= since. Long ranges go in windows: phrase searches over
-    months of tweets can hit the archive's statement timeout."""
+def _scan(column: str, start: str, end: str, query: str) -> list[list[dict]]:
+    """Pages of one search over `column` in [start, end]. The archive cancels queries that run
+    past its statement timeout, which a busy stretch (a large archive uploaded at once) causes
+    even over a few hours: then the window is halved and each half searched, down to MIN_WINDOW."""
+    try:
+        return list(archive.scan(column, start, end, select=SCAN_SELECT, fts=query))
+    except archive.StatementTimeout:
+        lo, hi = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        if hi - lo <= MIN_WINDOW:
+            print(f"::warning::Skipped '{query}' for {column} {start} to {end}: the archive timed out "
+                  f"even on {MIN_WINDOW}.", flush=True)
+            runlog.add("search windows skipped")
+            return []
+        runlog.add("search windows split")
+        mid = _iso(lo + (hi - lo) / 2)
+        return _scan(column, start, mid, query) + _scan(column, mid, end, query)
+
+
+def _search_window(con, column: str, start: str, end: str, totals: dict) -> int:
+    """Run every search over one window; add each search's matches and new candidates to totals."""
     new = 0
     for label, query in config.SEARCHES.items():
-        total = found = 0
-        for start, end in _windows(since, window_days):
-            for page in archive.scan(column, start, end, select=SCAN_SELECT, fts=query):
-                total += len(page)
-                found += ingest(con, page, label)
+        pages = _scan(column, start, end, query)
+        found = sum(ingest(con, page, label) for page in pages)
+        matches, before = totals.get(label, (0, 0))
+        totals[label] = (matches + sum(map(len, pages)), before + found)
         new += found
-        print(f"  {verb} '{label}': {total} matches, {found} new candidates", flush=True)
     return new
+
+
+def _report(verb: str, totals: dict):
+    for label, (matches, found) in totals.items():
+        print(f"  {verb} '{label}': {matches} matches, {found} new candidates", flush=True)
 
 
 def backfill(con, since: str | None = None):
@@ -140,7 +162,11 @@ def backfill(con, since: str | None = None):
     since = since or config.START_DATE
     if not db.get_state(con, "updated_cursor"):
         db.set_state(con, "updated_cursor", _iso(_now()))
-    new = _search_all(con, "created_at", since, "backfill", window_days=10)
+    # Newest first, so a long backfill shows recent opinions early.
+    totals = {}
+    new = sum(_search_window(con, "created_at", start, end, totals)
+              for start, end in _windows(since, timedelta(days=10))[::-1])
+    _report("backfill", totals)
     done = db.get_state(con, "searched_since")
     db.set_state(con, "searched_since", min(done, since) if done else since)
     print(f"backfill done: {new} new candidates since {since}")
@@ -153,13 +179,17 @@ def needs_backfill(con) -> bool:
 
 
 def incremental(con):
-    """Run every search over tweets inserted or updated since the last run."""
-    started = _now()
-    cursor = db.get_state(con, "updated_cursor") or _iso(started - timedelta(hours=2))
+    """Run every search over tweets inserted or updated since the last run, a few hours of updates
+    at a time, oldest first. The cursor moves after each window, so a run that fails partway
+    leaves the next one only the rest to do."""
+    cursor = db.get_state(con, "updated_cursor") or _iso(_now() - timedelta(hours=2))
     # Overlap the previous run a little: rows committed late can carry an earlier updated_at.
     since = _iso(datetime.fromisoformat(cursor) - timedelta(minutes=10))
-    new = _search_all(con, "updated_at", since, "incremental")
-    db.set_state(con, "updated_cursor", _iso(started))
+    totals, new = {}, 0
+    for start, end in _windows(since, timedelta(hours=SEARCH_HOURS)):
+        new += _search_window(con, "updated_at", start, end, totals)
+        db.set_state(con, "updated_cursor", end)
+    _report("incremental", totals)
     print(f"incremental: {new} new candidates since {since}")
 
 
