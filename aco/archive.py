@@ -17,7 +17,11 @@ _client = httpx.Client(
 )
 
 
-def get(table: str, params: list[tuple[str, str]]) -> list[dict]:
+class StatementTimeout(RuntimeError):
+    """The archive cancelled the query for running past its statement timeout (Postgres 57014)."""
+
+
+def get(table: str, params: list[tuple[str, str]], retry_timeouts=True) -> list[dict]:
     error = None
     for attempt in range(5):
         try:
@@ -26,6 +30,8 @@ def get(table: str, params: list[tuple[str, str]]) -> list[dict]:
                 r.raise_for_status()
                 return r.json()
             error = f"HTTP {r.status_code}: {r.text[:200]}"
+            if '"57014"' in r.text and not retry_timeouts:
+                raise StatementTimeout(f"{table}: {error}")
         except httpx.TransportError as e:
             error = repr(e)
         time.sleep(2 ** attempt)
@@ -38,7 +44,8 @@ def scan(column: str, since: str, until: str | None = None,
     optionally limited to a full-text search (websearch syntax, English stemming).
 
     Keyset pagination on `column`; rows sharing the boundary timestamp are
-    re-fetched and de-duplicated by id."""
+    re-fetched and de-duplicated by id. Raises StatementTimeout rather than retrying a search
+    that ran too long: the same query would time out again, so the caller narrows the range."""
     cursor, seen = until, set()
     page = SEARCH_PAGE if fts else PAGE
     while True:
@@ -48,7 +55,7 @@ def scan(column: str, since: str, until: str | None = None,
             params.append(("fts", f"wfts(english).{fts}"))
         if cursor:
             params.append((column, f"lte.{cursor}"))
-        rows = get("tweets", params)
+        rows = get("tweets", params, retry_timeouts=False)
         fresh = [r for r in rows if r["tweet_id"] not in seen]
         if not fresh:
             return
